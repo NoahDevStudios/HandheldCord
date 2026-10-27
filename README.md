@@ -11,7 +11,8 @@ HandheldCord sits next to the **official Discord desktop app** and makes it cont
 - Switch between your game and Discord with one button – or by holding **View + Menu**.
 - Browse servers, channels and unread channels with the D-pad and bumpers.
 - Type on a controller-optimized on-screen keyboard, or send quick replies from the quick menu.
-- Mute, deafen and push-to-talk while you play, through Discord's own global keybinds.
+- Join voice channels and leave calls without touching the screen.
+- Mute and push-to-talk while you play, through Discord's own global keybinds.
 - A hint bar always shows what each button does right now.
 
 ### Companion mode: no account access
@@ -35,7 +36,9 @@ No Python needed. To update, replace the folder with the new release; your setti
 
 ## First start
 
-A setup assistant opens. It records three global keybinds in Discord (F13 mute, F14 deafen, F15 push-to-talk – HandheldCord "presses" them for you, so no keyboard is needed) and explains how to map your handheld's spare buttons.
+A setup assistant opens in a corner of the screen – **Y** collapses it, **View** moves it to another corner, so Discord stays readable behind it.
+It opens Discord's settings for you and records the keybinds HandheldCord needs; you only add the keybind and confirm with **A**.
+All keys are standard keys (F1–F12 by default), so the app that came with your handheld can map buttons to them.
 HandheldCord then lives in the system tray; reopen the assistant from the tray icon or the quick menu.
 
 ## Controls (defaults)
@@ -47,8 +50,8 @@ The game owns the controller, so HandheldCord only listens for a few things:
 | Input | Action |
 |---|---|
 | Hold **View + Menu** (0.5 s) | Bring Discord to the front |
-| Spare button mapped to **Ctrl+Alt+Shift+F12** | Same – recommended (map it in Armoury Crate SE, Legion Space, MSI Center M or Handheld Companion) |
-| Buttons mapped to **F13 / F14 / F15** | Mute / deafen / push-to-talk via Discord's global keybinds |
+| Spare button mapped to **F10** | Same – recommended (map it in Armoury Crate SE, Legion Space, MSI Center M or Handheld Companion) |
+| Buttons mapped to **F6 / F7** | Mute / push-to-talk via Discord's global keybinds |
 
 ### In Discord
 
@@ -58,15 +61,17 @@ The game owns the controller, so HandheldCord only listens for a few things:
 | D-pad ← → | Previous / next unread channel |
 | LB / RB | Previous / next server |
 | LT / RT, right stick | Scroll the chat |
-| A / B | Enter / Esc |
-| X | Quick switcher (search channels, DMs, servers) |
+| A | Enter |
+| B | Esc · **hold:** leave the call (asks first: A = yes, B = no) |
+| X | Quick switcher (search channels, DMs, servers) · **hold:** voice channels |
 | Y | On-screen keyboard |
 | L3 | Emoji picker |
-| Menu | Quick menu: quick replies, favorites, mute/deafen, setup |
-| View | Mute (hold: deafen) |
+| Menu | Quick menu: quick replies, favorites, mute, join or leave voice, setup |
+| View | Mute |
 | Hold View + Menu | Back to the game |
 
 Inside the quick switcher or emoji picker the D-pad sends plain arrow keys, **A** picks, **B** closes, **Y** opens the keyboard to type a search.
+Discord's channel shortcuts skip voice channels, which is why holding **X** lists them – pick one and press **A** to join.
 
 ### On-screen keyboard
 
@@ -91,9 +96,9 @@ The keyboard never takes the focus, so the text lands in whatever Discord field 
 |---|---|
 | `quick_replies` | Texts in the quick menu, e.g. `["gg", "brb", "👍"]` |
 | `favorites` | `[{"name": "Squad – general", "query": "general"}]` – opens the quick switcher, types `query`, presses Enter |
-| `overlay_hotkey` | Global hotkey that switches between game and Discord (`""` disables it) |
-| `global_keybinds` | Keys recorded as Discord global keybinds for `mute`, `deafen`, `ptt` |
-| `discord_shortcuts` | Discord's in-app shortcuts for `mute`, `deafen`, `switcher`, `emoji` |
+| `handheld_keys` | Standard keys for your handheld buttons: `overlay` (switch game ⇄ Discord), `mute`, `ptt` – easiest to pick in the setup assistant (`""` turns one off) |
+| `discord_shortcuts` | Discord's in-app shortcuts: `switcher`, `emoji`, `settings` |
+| `discord_keybinds` | Keybinds that only HandheldCord sends: `disconnect` (leave the call) |
 | `language` / `osk_layout` | `auto`, `en` or `de` |
 | `maximize_discord` | Maximize Discord when bringing it to the front |
 | `show_hints` | Show the button hint bar |
@@ -115,13 +120,14 @@ Contexts: `game`, `discord`, `discord_popup`, `osk`, `menu`, `wizard`. A context
 
 - Entry forms: `{"on": "A", "do": …, "repeat": true}`, `{"on": "VIEW", "tap": …, "long": …}`, `{"on": "RB", "hold": "voice.ptt"}`, `{"chord": [...], "do": …}`
 - Buttons: `A B X Y LB RB LT RT VIEW MENU L3 R3`, `DPAD_UP/DOWN/LEFT/RIGHT`, `LS_UP/…`, `RS_UP/…`
-- Actions: `key:<combo>` (e.g. `key:Ctrl+K`), `text:<text>`, `reply:<n>`, `favorite:<n>`, `overlay.toggle`, `voice.mute`, `voice.deafen`, `voice.ptt`, `discord.switcher`, `discord.emoji`, `osk.open`, `menu.open`, `wizard.open`, plus the `osk.*`, `menu.*`, `popup.*` and `wizard.*` actions used by the defaults
+- Actions: `key:<combo>` (e.g. `key:Ctrl+K`), `text:<text>`, `reply:<n>`, `favorite:<n>`, `overlay.toggle`, `voice.mute`, `voice.ptt`, `voice.leave` (asks first), `voice.disconnect`, `discord.switcher`, `discord.voice_channels`, `discord.emoji`, `discord.settings`, `osk.open`, `menu.open`, `wizard.open`, plus the `osk.*`, `menu.*`, `popup.*`, `confirm.*` and `wizard.*` actions used by the defaults
 
 ## Known limitations
 
 - **Double input:** if Steam Input's desktop layout or Handheld Companion's desktop mode turns the controller into mouse and keyboard, Discord gets every input twice. Turn that off while using HandheldCord.
 - **Exclusive fullscreen** games are minimized when Discord comes to the front – borderless mode avoids that.
-- **Mute/deafen state** is not read from Discord; the toast only confirms that the shortcut was sent.
+- HandheldCord doesn't read Discord's screen: the **mute state** isn't known (the toast only confirms the key was sent), and it can't tell whether a call is open – that's why leaving a call asks first.
+- **Mute and push-to-talk keys reach the game as well.** Pick keys your game doesn't use (F5/F9 are often quicksave/quickload).
 - If Discord runs **as administrator**, Windows blocks the simulated keys – run both at the same privilege level.
 - Discord's shortcuts may change with updates; all of them are configurable.
 

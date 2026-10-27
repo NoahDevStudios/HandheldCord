@@ -43,22 +43,43 @@ def test_osk_symbol_layer_and_commit_keys():
 def test_first_start_writes_the_defaults(tmp_path):
     cfg = config.load(tmp_path / "config.json")
     assert (tmp_path / "config.json").exists()
-    assert cfg.global_keybinds == {"mute": "F13", "deafen": "F14", "ptt": "F15"}
+    assert cfg.handheld_keys == {"overlay": "F10", "mute": "F6", "ptt": "F7"}
+    assert cfg.discord_shortcuts["settings"] == "Ctrl+,"
     assert not cfg.setup_done
 
 
 def test_user_values_are_merged_and_validated(tmp_path):
     path = tmp_path / "config.json"
     path.write_text(json.dumps({
-        "global_keybinds": {"mute": "f20", "deafen": "Hyper+X"},
+        "config_version": 2,
+        "handheld_keys": {"mute": "f8", "ptt": "Hyper+X", "overlay": ""},
         "quick_replies": ["hi", 5, " "],
         "bindings": {"game": []},
     }), "utf-8")
     cfg = config.load(path)
-    assert cfg.global_keybinds == {"mute": "F20", "deafen": "F14", "ptt": "F15"}
+    assert cfg.handheld_keys == {"overlay": "", "mute": "F8", "ptt": "F7"}
     assert cfg.quick_replies == ["hi"]
     assert cfg.bindings["game"] == []
     assert cfg.bindings["discord"]  # contexts not listed keep their defaults
+
+
+def test_version_1_config_is_migrated_to_standard_keys(tmp_path):
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps({
+        "global_keybinds": {"mute": "F13", "deafen": "F14", "ptt": "F15"},
+        "overlay_hotkey": "Ctrl+Alt+Shift+F12",
+        "discord_shortcuts": {"mute": "Ctrl+Shift+M", "deafen": "Ctrl+Shift+D", "switcher": "Ctrl+K"},
+        "quick_replies": ["hi"],
+        "setup_done": True,
+    }), "utf-8")
+    cfg = config.load(path)
+    assert cfg.handheld_keys == {"overlay": "F10", "mute": "F6", "ptt": "F7"}
+    assert not cfg.setup_done  # Discord's keybinds have to be recorded again
+    saved = json.loads(path.read_text("utf-8"))
+    assert saved["config_version"] == 2
+    assert "global_keybinds" not in saved and "overlay_hotkey" not in saved
+    assert "mute" not in saved["discord_shortcuts"]
+    assert saved["quick_replies"] == ["hi"]
 
 
 def test_broken_config_is_never_overwritten(tmp_path):
@@ -84,15 +105,13 @@ def test_every_referenced_string_exists():
     keys = set(STRINGS["en"])
     for step in STEPS:
         assert {f"wizard.{step.id}.title", f"wizard.{step.id}.body"} <= keys
-        if step.primary:
+        if step.primary and step.primary != "record":
             assert f"wizard.{step.id}.primary" in keys
-        if step.secondary:
-            assert f"wizard.{step.id}.secondary" in keys
     assert set(LABELS.values()) <= keys
 
 
 def test_wizard_texts_format_in_both_languages():
-    params = {"mute": "F13", "deafen": "F14", "ptt": "F15", "overlay": "Ctrl+Alt+Shift+F12", "status": "ok"}
+    params = {"overlay": "F10", "mute": "F6", "ptt": "F7", "leave": "Ctrl+Alt+Shift+F11", "status": "ok"}
     for lang in STRINGS:
         t = Translator(lang)
         for step in STEPS:

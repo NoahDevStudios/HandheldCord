@@ -15,25 +15,33 @@ log = logging.getLogger(__name__)
 
 APP_DIR = Path(os.environ.get("APPDATA") or Path.home()) / "HandheldCord"
 DEFAULT_PATH = APP_DIR / "config.json"
+CONFIG_VERSION = 2
 MIN_REPEAT_INTERVAL_S = 0.02
 
 DEFAULTS: dict = {
+    "config_version": CONFIG_VERSION,
     "language": "auto",
     "osk_layout": "auto",
     "maximize_discord": True,
     "show_hints": True,
-    # A spare handheld button mapped to this combo switches between game and Discord.
-    "overlay_hotkey": "Ctrl+Alt+Shift+F12",
-    # Recorded as global keybinds in Discord by the setup assistant; they work in games.
-    "global_keybinds": {"mute": "F13", "deafen": "F14", "ptt": "F15"},
-    # Discord's own shortcuts, used while Discord has the focus.
-    "discord_shortcuts": {"mute": "Ctrl+Shift+M", "deafen": "Ctrl+Shift+D", "switcher": "Ctrl+K", "emoji": "Ctrl+E"},
+    # Standard keys you map to spare handheld buttons; vendor apps only offer F1-F12 and the like.
+    #   overlay  HandheldCord switches between the game and Discord
+    #   mute/ptt recorded as global keybinds in Discord by the setup assistant
+    "handheld_keys": {"overlay": "F10", "mute": "F6", "ptt": "F7"},
+    # Discord's own shortcuts, sent while Discord has the focus.
+    "discord_shortcuts": {"switcher": "Ctrl+K", "emoji": "Ctrl+E", "settings": "Ctrl+,"},
+    # Keybinds recorded in Discord that only HandheldCord sends, so they never need a handheld button.
+    # Discord has no built-in shortcut for leaving a call, only a keybind action.
+    "discord_keybinds": {"disconnect": "Ctrl+Alt+Shift+F11"},
     "quick_replies": ["gg", "brb", "1 min!", "👍"],
     "favorites": [],
     "timing": {"repeat_delay_ms": 400, "repeat_interval_ms": 80, "long_press_ms": 500, "chord_hold_ms": 500},
     "bindings": {},
     "setup_done": False,
 }
+
+# Version 1 defaults; none of them can be mapped in the handheld vendor apps.
+_V1_DEFAULT_KEYS = frozenset({"F13", "F14", "F15", "Ctrl+Alt+Shift+F12"})
 
 
 class Config:
@@ -59,17 +67,21 @@ class Config:
         return bool(self.data.get("show_hints", True))
 
     @property
-    def overlay_hotkey(self) -> str:
-        """An empty string disables the hotkey."""
-        return _combo(self.data.get("overlay_hotkey"), DEFAULTS["overlay_hotkey"], "overlay_hotkey", allow_empty=True)
+    def handheld_keys(self) -> dict[str, str]:
+        """overlay, mute and ptt; an empty string switches one off."""
+        return self._combos("handheld_keys", allow_empty=True)
 
-    @property
-    def global_keybinds(self) -> dict[str, str]:
-        return self._combos("global_keybinds")
+    def set_handheld_key(self, name: str, combo: str) -> None:
+        self.data.setdefault("handheld_keys", {})[name] = canonical(combo)
+        self.save()
 
     @property
     def discord_shortcuts(self) -> dict[str, str]:
         return self._combos("discord_shortcuts")
+
+    @property
+    def discord_keybinds(self) -> dict[str, str]:
+        return self._combos("discord_keybinds")
 
     @property
     def quick_replies(self) -> list[str]:
@@ -134,11 +146,14 @@ class Config:
         except OSError:
             log.exception("Could not save %s", self.path)
 
-    def _combos(self, section: str) -> dict[str, str]:
+    def _combos(self, section: str, allow_empty: bool = False) -> dict[str, str]:
         defaults = DEFAULTS[section]
         raw = self.data.get(section)
         raw = raw if isinstance(raw, dict) else {}
-        return {name: _combo(raw.get(name, default), default, f"{section}.{name}") for name, default in defaults.items()}
+        return {
+            name: _combo(raw.get(name, default), default, f"{section}.{name}", allow_empty)
+            for name, default in defaults.items()
+        }
 
 
 def _combo(value: object, default: str, name: str, allow_empty: bool = False) -> str:
@@ -165,8 +180,35 @@ def load(path: Path = DEFAULT_PATH) -> Config:
     except (OSError, ValueError) as exc:
         log.error("Could not read %s: %s - using the defaults", path, exc)
         return Config(path, data, error=str(exc))
+    migrated = _migrate(user)
     _merge(data, user)
-    return Config(path, data)
+    config = Config(path, data)
+    if migrated:
+        log.info("Updated %s to config version %d", path, CONFIG_VERSION)
+        config.save()
+    return config
+
+
+def _migrate(user: dict) -> bool:
+    """Bring a config file from an older version up to date; returns True if it changed."""
+    if user.get("config_version", 1) >= CONFIG_VERSION:
+        return False
+    # v1 used F13-F15 and Ctrl+Alt+Shift+F12, which the handheld vendor apps cannot map.
+    old_keybinds = user.pop("global_keybinds", None)
+    old_keybinds = old_keybinds if isinstance(old_keybinds, dict) else {}
+    old_overlay = user.pop("overlay_hotkey", None)
+    keys = user.setdefault("handheld_keys", {})
+    for name, value in (("overlay", old_overlay), ("mute", old_keybinds.get("mute")), ("ptt", old_keybinds.get("ptt"))):
+        if isinstance(value, str) and value not in _V1_DEFAULT_KEYS:
+            keys.setdefault(name, value)
+    shortcuts = user.get("discord_shortcuts")
+    if isinstance(shortcuts, dict):
+        shortcuts.pop("mute", None)
+        shortcuts.pop("deafen", None)
+    # The keys changed, so Discord's keybinds have to be recorded again.
+    user["setup_done"] = False
+    user["config_version"] = CONFIG_VERSION
+    return True
 
 
 def _merge(base: dict, override: dict) -> None:

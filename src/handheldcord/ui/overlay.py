@@ -15,6 +15,7 @@ OVERLAYS = (
     ("Toast", True),
     ("Osk", False),
     ("QuickMenu", False),
+    ("Confirm", False),
     ("Wizard", False),
 )
 

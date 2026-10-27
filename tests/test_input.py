@@ -42,8 +42,8 @@ def test_aliases_and_key_normalisation():
 
 
 def test_do_together_with_long_becomes_a_tap():
-    binding = parse_binding({"on": "A", "do": "voice.mute", "long": "voice.deafen"}, normalize_action)
-    assert (binding.press, binding.tap, binding.long) == (None, "voice.mute", "voice.deafen")
+    binding = parse_binding({"on": "B", "do": "key:Esc", "long": "voice.leave"}, normalize_action)
+    assert (binding.press, binding.tap, binding.long) == (None, "key:Esc", "voice.leave")
 
 
 def test_invalid_bindings_are_skipped(caplog):

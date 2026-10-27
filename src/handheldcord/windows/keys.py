@@ -25,6 +25,7 @@ _KEY_NAMES: dict[int, str] = {
     0x08: "Backspace",
     0x09: "Tab",
     0x0D: "Enter",
+    0x13: "Pause",
     0x1B: "Esc",
     0x20: "Space",
     0x21: "PageUp",
@@ -37,13 +38,19 @@ _KEY_NAMES: dict[int, str] = {
     0x28: "Down",
     0x2D: "Insert",
     0x2E: "Delete",
+    0x91: "ScrollLock",
+    0xBC: ",",  # VK_OEM_COMMA is the comma key on every layout
+    0xBE: ".",
 }
 _KEY_NAMES.update({0x6F + n: f"F{n}" for n in range(1, 25)})
 _KEY_NAMES.update({c: chr(c) for c in range(ord("A"), ord("Z") + 1)})
 _KEY_NAMES.update({c: chr(c) for c in range(ord("0"), ord("9") + 1)})
 
 _KEY_ALIASES = {name.upper(): vk for vk, name in _KEY_NAMES.items()}
-_KEY_ALIASES.update({"RETURN": 0x0D, "ESCAPE": 0x1B, "PGUP": 0x21, "PGDN": 0x22, "INS": 0x2D, "DEL": 0x2E})
+_KEY_ALIASES.update({
+    "RETURN": 0x0D, "ESCAPE": 0x1B, "PGUP": 0x21, "PGDN": 0x22, "INS": 0x2D, "DEL": 0x2E,
+    "COMMA": 0xBC, "PERIOD": 0xBE, "SCROLL": 0x91, "BREAK": 0x13,
+})
 
 # Without KEYEVENTF_EXTENDEDKEY these would arrive as numpad keys.
 EXTENDED_KEYS = frozenset({0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x2D, 0x2E, VK_LWIN})

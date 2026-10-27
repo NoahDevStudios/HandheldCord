@@ -29,21 +29,70 @@ def test_dpad_switches_channels_with_auto_repeat(harness):
     assert harness.keys.calls == [("tap", "Alt+Down"), ("tap", "Alt+Down")]
 
 
-def test_view_tap_mutes_and_long_press_deafens(harness):
+def test_view_mutes_with_the_handheld_mute_key(harness):
     harness.discord.in_front = True
     harness.tap("VIEW")
-    harness.hold("VIEW")
-    harness.hold("VIEW", seconds=0.6)
-    harness.hold()
-    assert harness.keys.calls == [("tap", "Ctrl+Shift+M"), ("tap", "Ctrl+Shift+D")]
-    assert harness.ui.toasts == ["Mute toggled", "Deafen toggled"]
+    assert harness.keys.calls == [("tap", "F6")]
+    assert harness.ui.toasts == ["Mute toggled"]
 
 
-def test_mute_in_a_game_uses_the_global_keybind(make_harness):
+def test_mute_in_a_game_uses_the_same_key(make_harness):
     h = make_harness(bindings={"game": [{"chord": ["L3", "R3"], "do": "voice.mute"}]})
     h.hold("L3", "R3")
     h.hold("L3", "R3", seconds=0.6)
-    assert h.keys.calls == [("tap", "F13")]
+    assert h.keys.calls == [("tap", "F6")]
+
+
+def test_holding_x_lists_voice_channels(harness):
+    harness.discord.in_front = True
+    harness.hold("X")
+    harness.hold("X", seconds=0.6)
+    harness.hold()
+    assert harness.keys.calls == [("tap", "Ctrl+K")]
+    for _delay, callback in harness.scheduled:
+        callback()
+    assert harness.keys.calls == [("tap", "Ctrl+K"), ("type", "!")]
+    harness.tap("DPAD_DOWN")
+    harness.tap("A")  # Enter joins the selected voice channel
+    assert harness.keys.calls[-2:] == [("tap", "Down"), ("tap", "Enter")]
+    assert harness.router.stack == []
+
+
+def test_tapping_x_still_opens_the_quick_switcher(harness):
+    harness.discord.in_front = True
+    harness.tap("X")
+    assert harness.keys.calls == [("tap", "Ctrl+K")]
+    assert harness.scheduled == []
+
+
+def test_holding_b_asks_before_leaving_the_call(harness):
+    harness.discord.in_front = True
+    harness.hold("B")
+    harness.hold("B", seconds=0.6)
+    harness.hold()
+    assert harness.ui.confirm["title"] == "Leave the call?"
+    assert harness.keys.calls == []
+    harness.tap("A")
+    assert harness.keys.calls == [("tap", "Ctrl+Alt+Shift+F11")]
+    assert harness.ui.confirm is None
+    assert harness.router.stack == []
+
+
+def test_answering_no_keeps_the_call(harness):
+    harness.discord.in_front = True
+    harness.hold("B")
+    harness.hold("B", seconds=0.6)
+    harness.hold()
+    harness.tap("B")
+    assert harness.keys.calls == []
+    assert harness.ui.confirm is None
+
+
+def test_tapping_b_is_still_escape(harness):
+    harness.discord.in_front = True
+    harness.tap("B")
+    assert harness.keys.calls == [("tap", "Esc")]
+    assert harness.ui.confirm is None
 
 
 def test_keyboard_types_and_sends(harness):
@@ -98,15 +147,79 @@ def test_favorites_go_through_the_quick_switcher(make_harness):
     assert h.keys.calls == [("tap", "Ctrl+K"), ("type", "general"), ("tap", "Enter")]
 
 
-def test_setup_assistant_sends_the_global_keybind(harness):
+def go_to_step(harness, step_id):
     harness.router.open_wizard()
-    assert harness.ui.wizard["step"] == 0
-    harness.tap("RB")
-    harness.tap("RB")
-    assert harness.ui.wizard["title"] == "Keybind for mute"
+    while harness.router.wizard.step.id != step_id:
+        harness.tap("RB")
+
+
+def test_assistant_records_the_mute_key_in_discords_settings(harness):
+    go_to_step(harness, "mute")
+    assert harness.ui.wizard["title"] == "Mute key in Discord"
+    harness.tap("A")  # Discord is not in front yet
+    assert harness.keys.calls == []
+    assert harness.ui.toasts[-1] == "Open Discord's settings first (Ⓧ)"
+    harness.tap("X")
+    assert harness.discord.in_front
+    for _delay, callback in harness.scheduled:
+        callback()
+    assert harness.keys.calls == [("tap", "Ctrl+,")]
     harness.tap("A")
-    assert harness.keys.calls == [("tap", "F13")]
-    assert harness.ui.toasts[-1] == "Sent F13"
+    assert harness.keys.calls[-1] == ("tap", "F6")
+    assert harness.ui.toasts[-1] == "Sent F6"
+
+
+def test_assistant_records_the_leave_keybind(harness):
+    go_to_step(harness, "leave")
+    harness.discord.in_front = True
+    harness.tap("A")
+    assert harness.keys.calls == [("tap", "Ctrl+Alt+Shift+F11")]
+
+
+def test_key_picker_skips_keys_already_in_use(harness):
+    go_to_step(harness, "mute")
+    harness.tap("DPAD_RIGHT")  # F7 is push-to-talk, so the next free key is F8
+    assert harness.cfg.handheld_keys["mute"] == "F8"
+    assert harness.ui.wizard["key"]["label"] == "F8"
+    assert json.loads(harness.cfg.path.read_text("utf-8"))["handheld_keys"]["mute"] == "F8"
+    harness.tap("DPAD_LEFT")
+    assert harness.cfg.handheld_keys["mute"] == "F6"
+
+
+def test_changing_the_overlay_key_registers_it_again(harness):
+    changes = []
+    harness.router.on_keys_changed = lambda: changes.append(harness.cfg.handheld_keys["overlay"])
+    go_to_step(harness, "overlay")
+    harness.tap("DPAD_RIGHT")
+    assert changes == ["F11"]
+
+
+def test_overlay_key_is_detected_instead_of_switching(harness):
+    go_to_step(harness, "overlay")
+    harness.router.on_hotkey("overlay")
+    assert harness.discord.calls == []
+    assert harness.ui.toasts[-1] == "✔ F10 detected"
+
+
+def test_assistant_can_collapse_and_move(harness):
+    harness.router.open_wizard()
+    assert harness.ui.wizard["position"] == "bottom-right"
+    harness.tap("Y")
+    assert harness.ui.wizard["collapsed"] is True
+    harness.tap("Y")
+    harness.tap("VIEW")
+    assert harness.ui.wizard["collapsed"] is False
+    assert harness.ui.wizard["position"] == "bottom-left"
+
+
+def test_mute_test_leaves_discords_settings_first(harness):
+    go_to_step(harness, "test")
+    harness.discord.in_front = True
+    harness.tap("A")
+    assert harness.keys.calls == [("tap", "Esc")]
+    for _delay, callback in harness.scheduled:
+        callback()
+    assert harness.keys.calls == [("tap", "Esc"), ("tap", "F6")]
 
 
 def test_closing_the_assistant_marks_setup_done(harness):
@@ -137,7 +250,8 @@ def test_hint_bar_lists_the_discord_controls(harness):
     harness.hold()
     hints = {hint["label"]: hint for hint in harness.ui.hints}
     assert hints["Channel"]["buttons"] == ["DPAD_UP", "DPAD_DOWN"]
-    assert hints["Mute (hold: Deafen)"]["buttons"] == ["VIEW"]
+    assert hints["Search (hold: Voice channels)"]["buttons"] == ["X"]
+    assert hints["Back (hold: Leave call)"]["buttons"] == ["B"]
     assert hints["Game (hold)"] == {"buttons": ["VIEW", "MENU"], "label": "Game (hold)", "joiner": "+"}
 
 

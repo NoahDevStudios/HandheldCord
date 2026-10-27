@@ -4,7 +4,7 @@ from __future__ import annotations
 from PySide6.QtCore import Property, QObject, Signal, Slot
 
 # The hint bar is only useful while Discord or one of our overlays is in front.
-HINT_CONTEXTS = frozenset({"discord", "discord_popup", "osk", "menu"})
+HINT_CONTEXTS = frozenset({"discord", "discord_popup", "osk", "menu", "confirm"})
 
 
 class Bridge(QObject):
@@ -14,6 +14,7 @@ class Bridge(QObject):
     oskRowsChanged = Signal()
     menuChanged = Signal()
     menuItemsChanged = Signal()
+    confirmChanged = Signal()
     wizardChanged = Signal()
     # Emitted on the hotkey thread; Qt delivers it queued on the GUI thread.
     hotkeyPressed = Signal(str)
@@ -29,6 +30,7 @@ class Bridge(QObject):
         self._osk_rows: list = []
         self._menu: dict = {"visible": False}
         self._menu_items: list = []
+        self._confirm: dict = {"visible": False}
         self._wizard: dict = {"visible": False}
         self.hotkeyPressed.connect(self._on_hotkey)
 
@@ -72,6 +74,12 @@ class Bridge(QObject):
             self._menu = {**state, "visible": True}
         self.menuChanged.emit()
 
+    def confirm_changed(self, snapshot: dict | None) -> None:
+        if snapshot is None and not self._confirm.get("visible"):
+            return
+        self._confirm = {**snapshot, "visible": True} if snapshot else {"visible": False}
+        self.confirmChanged.emit()
+
     def wizard_changed(self, snapshot: dict | None) -> None:
         self._wizard = {**snapshot, "visible": True} if snapshot else {"visible": False}
         self.wizardChanged.emit()
@@ -85,6 +93,7 @@ class Bridge(QObject):
     oskRows = Property("QVariantList", lambda self: self._osk_rows, notify=oskRowsChanged)
     menu = Property("QVariantMap", lambda self: self._menu, notify=menuChanged)
     menuItems = Property("QVariantList", lambda self: self._menu_items, notify=menuItemsChanged)
+    confirm = Property("QVariantMap", lambda self: self._confirm, notify=confirmChanged)
     wizard = Property("QVariantMap", lambda self: self._wizard, notify=wizardChanged)
 
     # --- touch input from QML -------------------------------------------------
@@ -98,6 +107,11 @@ class Bridge(QObject):
     def menuTap(self, index: int) -> None:
         if self.router:
             self.router.menu_tap(index)
+
+    @Slot(bool)
+    def confirmAnswer(self, yes: bool) -> None:
+        if self.router:
+            self.router.confirm_answer(yes)
 
     @Slot(str)
     def wizardButton(self, which: str) -> None:

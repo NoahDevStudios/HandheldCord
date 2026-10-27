@@ -15,6 +15,8 @@ def test_named_keys_and_aliases():
     assert parse_combo("F13").key == 0x7C
     assert canonical("pgdn") == "PageDown"
     assert canonical("Strg+Esc") == "Ctrl+Esc"
+    assert parse_combo("Ctrl+,").key == 0xBC  # Discord: open user settings
+    assert canonical("ctrl+comma") == "Ctrl+,"
 
 
 @pytest.mark.parametrize("text", ["", "Ctrl+", "Hyper+K", "F25", "Ctrl+Shift"])

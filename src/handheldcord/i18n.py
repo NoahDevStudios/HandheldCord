@@ -10,12 +10,16 @@ STRINGS: dict[str, dict[str, str]] = {
         "hint.confirm": "OK / Send",
         "hint.back": "Back",
         "hint.search": "Search",
+        "hint.voice_channels": "Voice channels",
         "hint.emoji": "Emoji",
+        "hint.settings": "Settings",
         "hint.write": "Write",
         "hint.menu": "Menu",
         "hint.mute": "Mute",
-        "hint.deafen": "Deafen",
         "hint.ptt": "Push-to-talk",
+        "hint.leave": "Leave call",
+        "hint.yes": "Yes",
+        "hint.no": "No",
         "hint.to_game": "Game",
         "hint.tap_long": "{tap} (hold: {long})",
         "hint.long": "hold: {label}",
@@ -34,8 +38,9 @@ STRINGS: dict[str, dict[str, str]] = {
         "toast.not_found": "Discord not found – is it installed?",
         "toast.focus_failed": "Couldn't bring the window to the front",
         "toast.mute": "Mute toggled",
-        "toast.deafen": "Deafen toggled",
         "toast.sent": "Sent {key}",
+        "toast.key_detected": "✔ {key} detected",
+        "toast.discord_first": "Open Discord's settings first (Ⓧ)",
         "toast.config_reloaded": "Configuration reloaded",
         "toast.config_error": "Configuration has errors – using defaults",
         "osk.space": "Space",
@@ -48,9 +53,14 @@ STRINGS: dict[str, dict[str, str]] = {
         "menu.section.voice": "Voice",
         "menu.section.app": "HandheldCord",
         "menu.mute": "Toggle mute",
-        "menu.deafen": "Toggle deafen",
+        "menu.voice_channels": "Join a voice channel",
+        "menu.leave": "Leave the call",
         "menu.to_game": "Back to the game",
         "menu.setup": "Open setup",
+        "confirm.yes": "Yes",
+        "confirm.no": "No",
+        "confirm.leave.title": "Leave the call?",
+        "confirm.leave.body": "You will be disconnected from voice.",
         "tray.tooltip": "HandheldCord – companion mode",
         "tray.setup": "Setup …",
         "tray.config": "Open configuration",
@@ -59,59 +69,67 @@ STRINGS: dict[str, dict[str, str]] = {
         "wizard.next": "Next",
         "wizard.back": "Back",
         "wizard.close": "Close",
+        "wizard.record": "Send {key}",
+        "wizard.open_settings": "Open settings",
+        "wizard.key": "Key",
+        "wizard.collapse": "Collapse",
+        "wizard.expand": "Show setup",
+        "wizard.move": "Move",
         "wizard.status.found": "✔ Discord found",
         "wizard.status.missing": "✖ Discord not found",
         "wizard.welcome.title": "Welcome to HandheldCord",
         "wizard.welcome.body": (
             "HandheldCord controls your official Discord app with your controller. It never touches your "
             "account and doesn't modify Discord – it only presses keys for you.\n\n"
-            "Setup takes about two minutes. For the steps inside Discord's settings you may use the "
-            "touchscreen this one time."
+            "Collapse this window with Ⓨ or move it to another corner with ⧉ to see what Discord shows behind it."
         ),
         "wizard.discord.title": "Start Discord",
         "wizard.discord.body": "Start Discord and log in. Ⓐ brings Discord to the front or starts it.\n\n{status}",
         "wizard.discord.primary": "Open Discord",
-        "wizard.mute.title": "Keybind for mute",
+        "wizard.overlay.title": "Key for Discord ⇄ game",
+        "wizard.overlay.body": (
+            "This key brings Discord to the front and takes you back to your game. Pick it with ◀ ▶ – "
+            "you will map it to a spare handheld button in a moment.\n\n"
+            "Press it now to test it: HandheldCord shows “detected”. Without a spare button, "
+            "holding ⧉ + ☰ works too."
+        ),
+        "wizard.mute.title": "Mute key in Discord",
         "wizard.mute.body": (
-            "To mute while you play, Discord needs a global keybind:\n\n"
-            "1. In Discord, open Settings → Keybinds.\n"
-            "2. Add a keybind with the action “Toggle Mute”.\n"
-            "3. Tap “Record Keybind”, then press Ⓐ – HandheldCord sends {mute}.\n"
-            "4. Stop recording."
+            "Pick with ◀ ▶ the key you will map to your mute button.\n\n"
+            "1. Ⓧ opens Discord's settings – tap “Keybinds” on the left.\n"
+            "2. “Add a Keybind”, choose the action “Toggle Mute” and tap “Record Keybind”.\n"
+            "3. Press Ⓐ – HandheldCord sends {mute}. Then stop recording."
         ),
-        "wizard.mute.primary": "Send {mute}",
-        "wizard.deafen.title": "Keybind for deafen",
-        "wizard.deafen.body": (
-            "Same as before, with the action “Toggle Deafen”:\n\n"
-            "1. Add another keybind.\n"
-            "2. Start recording and press Ⓐ – HandheldCord sends {deafen}.\n"
-            "3. Stop recording."
-        ),
-        "wizard.deafen.primary": "Send {deafen}",
         "wizard.ptt.title": "Push-to-talk (optional)",
         "wizard.ptt.body": (
-            "If you use push-to-talk: add a keybind with the action “Push to Talk (Normal)”, start "
-            "recording and press Ⓐ – HandheldCord sends {ptt}. Then switch the input mode to "
-            "Push to Talk under Voice & Video.\n\n"
+            "Same as before with the action “Push to Talk (Normal)”: pick the key with ◀ ▶, add a keybind, "
+            "start recording and Ⓐ sends {ptt}. Then switch the input mode to Push to Talk under "
+            "“Voice & Video”.\n\n"
             "No push-to-talk? Just continue with RB."
         ),
-        "wizard.ptt.primary": "Send {ptt}",
+        "wizard.leave.title": "Leaving a call",
+        "wizard.leave.body": (
+            "Discord has no fixed shortcut for leaving a call, only a keybind action. HandheldCord uses it "
+            "when you hold Ⓑ in Discord – after asking first.\n\n"
+            "Add a keybind with the action for disconnecting from voice, start recording and Ⓐ sends {leave}. "
+            "This key does not need a handheld button."
+        ),
         "wizard.test.title": "Test",
         "wizard.test.body": (
-            "Ⓐ triggers mute via {mute}, Ⓧ deafen via {deafen}. The microphone or headphone icon in "
-            "Discord should change.\n\n"
-            "Nothing happens? Go back with Ⓑ and record the keybind again."
+            "Discord turns its keybinds off while the Keybinds page is open. So Ⓐ first closes the settings, "
+            "then triggers mute via {mute} – the microphone in Discord should be crossed out.\n\n"
+            "Nothing happens? Go back with Ⓑ and record the key again."
         ),
         "wizard.test.primary": "Test mute",
-        "wizard.test.secondary": "Test deafen",
-        "wizard.buttons.title": "Handheld buttons",
+        "wizard.buttons.title": "Map your handheld buttons",
         "wizard.buttons.body": (
-            "In a game the controller belongs to the game. So map these in Armoury Crate SE, Legion Space, "
-            "MSI Center M or Handheld Companion:\n\n"
-            "• a spare button to {overlay} – it switches between game and Discord,\n"
-            "• a back button to {ptt} for push-to-talk,\n"
-            "• optionally more buttons to {mute} (mute) and {deafen} (deafen).\n\n"
-            "No spare buttons? Hold ⧉ and ☰ together for half a second."
+            "Now map spare buttons in your handheld app (Armoury Crate SE, Legion Space, MSI Center M or "
+            "Handheld Companion) to these keys:\n\n"
+            "• {overlay} – Discord ⇄ game\n"
+            "• {mute} – mute\n"
+            "• {ptt} – push-to-talk (hold)\n\n"
+            "Mute and push-to-talk reach the game too, so avoid keys your game uses – F5 and F9 are often "
+            "quicksave and quickload."
         ),
         "wizard.conflicts.title": "Avoid double input",
         "wizard.conflicts.body": (
@@ -121,8 +139,9 @@ STRINGS: dict[str, dict[str, str]] = {
         ),
         "wizard.done.title": "All set!",
         "wizard.done.body": (
-            "In a game: {overlay} or hold ⧉ + ☰ → Discord.\n"
-            "In Discord: ✛ channels, LB/RB servers, Ⓨ write, Ⓧ search, ☰ menu, ⧉ mute (hold: deafen).\n\n"
+            "In a game: {overlay} or hold ⧉ + ☰ → Discord. {mute} mutes, {ptt} is push-to-talk.\n"
+            "In Discord: ✛ channels, LB/RB servers, Ⓧ search (hold: voice channels), Ⓑ back "
+            "(hold: leave call), Ⓨ write, ☰ menu, ⧉ mute.\n\n"
             "You can reopen this setup from the menu (☰) at any time."
         ),
         "wizard.done.primary": "Let's go",
@@ -135,12 +154,16 @@ STRINGS: dict[str, dict[str, str]] = {
         "hint.confirm": "OK / Senden",
         "hint.back": "Zurück",
         "hint.search": "Suchen",
+        "hint.voice_channels": "Sprachkanäle",
         "hint.emoji": "Emoji",
+        "hint.settings": "Einstellungen",
         "hint.write": "Schreiben",
         "hint.menu": "Menü",
         "hint.mute": "Mute",
-        "hint.deafen": "Deafen",
         "hint.ptt": "Push-to-Talk",
+        "hint.leave": "Call verlassen",
+        "hint.yes": "Ja",
+        "hint.no": "Nein",
         "hint.to_game": "Zum Spiel",
         "hint.tap_long": "{tap} (lang: {long})",
         "hint.long": "lang: {label}",
@@ -159,8 +182,9 @@ STRINGS: dict[str, dict[str, str]] = {
         "toast.not_found": "Discord nicht gefunden – ist es installiert?",
         "toast.focus_failed": "Fenster konnte nicht nach vorne geholt werden",
         "toast.mute": "Mute umgeschaltet",
-        "toast.deafen": "Deafen umgeschaltet",
         "toast.sent": "{key} gesendet",
+        "toast.key_detected": "✔ {key} erkannt",
+        "toast.discord_first": "Öffne zuerst die Discord-Einstellungen (Ⓧ)",
         "toast.config_reloaded": "Konfiguration neu geladen",
         "toast.config_error": "Konfiguration fehlerhaft – Standardwerte aktiv",
         "osk.space": "Leerzeichen",
@@ -173,9 +197,14 @@ STRINGS: dict[str, dict[str, str]] = {
         "menu.section.voice": "Voice",
         "menu.section.app": "HandheldCord",
         "menu.mute": "Mute umschalten",
-        "menu.deafen": "Deafen umschalten",
+        "menu.voice_channels": "Sprachkanal beitreten",
+        "menu.leave": "Call verlassen",
         "menu.to_game": "Zurück zum Spiel",
         "menu.setup": "Einrichtung öffnen",
+        "confirm.yes": "Ja",
+        "confirm.no": "Nein",
+        "confirm.leave.title": "Call verlassen?",
+        "confirm.leave.body": "Du wirst vom Sprachkanal getrennt.",
         "tray.tooltip": "HandheldCord – Begleitmodus",
         "tray.setup": "Einrichtung …",
         "tray.config": "Konfiguration öffnen",
@@ -184,59 +213,70 @@ STRINGS: dict[str, dict[str, str]] = {
         "wizard.next": "Weiter",
         "wizard.back": "Zurück",
         "wizard.close": "Schließen",
+        "wizard.record": "{key} senden",
+        "wizard.open_settings": "Einstellungen öffnen",
+        "wizard.key": "Taste",
+        "wizard.collapse": "Einklappen",
+        "wizard.expand": "Einrichtung anzeigen",
+        "wizard.move": "Verschieben",
         "wizard.status.found": "✔ Discord gefunden",
         "wizard.status.missing": "✖ Discord nicht gefunden",
         "wizard.welcome.title": "Willkommen bei HandheldCord",
         "wizard.welcome.body": (
             "HandheldCord steuert deinen offiziellen Discord-Client mit dem Controller. Es greift nicht auf "
             "deinen Account zu und verändert Discord nicht – es drückt nur Tasten für dich.\n\n"
-            "Die Einrichtung dauert etwa zwei Minuten. Für die Schritte in den Discord-Einstellungen darfst "
-            "du einmalig den Touchscreen benutzen."
+            "Dieses Fenster klappst du mit Ⓨ ein und schiebst es mit ⧉ in eine andere Ecke, damit du siehst, "
+            "was Discord dahinter anzeigt."
         ),
         "wizard.discord.title": "Discord starten",
         "wizard.discord.body": "Starte Discord und melde dich an. Ⓐ holt Discord nach vorne oder startet es.\n\n{status}",
         "wizard.discord.primary": "Discord öffnen",
-        "wizard.mute.title": "Tastenkürzel für Mute",
+        "wizard.overlay.title": "Taste für Discord ⇄ Spiel",
+        "wizard.overlay.body": (
+            "Diese Taste holt Discord nach vorne und bringt dich zurück ins Spiel. Wähle sie mit ◀ ▶ – "
+            "gleich legst du sie in deiner Handheld-App auf einen freien Knopf.\n\n"
+            "Drück sie jetzt zum Testen: HandheldCord meldet „erkannt“. Ohne freien Knopf geht es auch mit "
+            "⧉ + ☰ (halten)."
+        ),
+        "wizard.mute.title": "Mute-Taste in Discord",
         "wizard.mute.body": (
-            "Damit Mute auch im Spiel funktioniert, braucht Discord ein globales Tastenkürzel:\n\n"
-            "1. Öffne in Discord die Einstellungen → Tastenbelegungen (Keybinds).\n"
-            "2. Füge eine Tastenbelegung mit der Aktion „Stummschaltung umschalten“ (Toggle Mute) hinzu.\n"
-            "3. Tippe auf „Tastenbelegung aufnehmen“ und drücke Ⓐ – HandheldCord sendet {mute}.\n"
-            "4. Beende die Aufnahme."
+            "Wähle mit ◀ ▶ die Taste, die du auf deinen Mute-Knopf legst.\n\n"
+            "1. Ⓧ öffnet die Discord-Einstellungen – tippe links auf „Tastenbelegungen“ (Keybinds).\n"
+            "2. „Tastenbelegung hinzufügen“, Aktion „Stummschaltung umschalten“ (Toggle Mute) wählen und "
+            "„Tastenbelegung aufnehmen“ antippen.\n"
+            "3. Ⓐ drücken – HandheldCord sendet {mute}. Danach die Aufnahme beenden."
         ),
-        "wizard.mute.primary": "{mute} senden",
-        "wizard.deafen.title": "Tastenkürzel für Deafen",
-        "wizard.deafen.body": (
-            "Wie eben, nur mit der Aktion für Deafen (Toggle Deafen):\n\n"
-            "1. Füge eine weitere Tastenbelegung hinzu.\n"
-            "2. Starte die Aufnahme und drücke Ⓐ – HandheldCord sendet {deafen}.\n"
-            "3. Beende die Aufnahme."
-        ),
-        "wizard.deafen.primary": "{deafen} senden",
         "wizard.ptt.title": "Push-to-Talk (optional)",
         "wizard.ptt.body": (
-            "Wenn du Push-to-Talk nutzt: Lege eine Tastenbelegung mit der Aktion „Push to Talk (Normal)“ an, "
-            "starte die Aufnahme und drücke Ⓐ – HandheldCord sendet {ptt}. Stelle danach unter "
-            "Sprache & Video den Eingabemodus auf Push-to-Talk.\n\n"
+            "Wie eben, mit der Aktion „Push to Talk (Normal)“: Taste mit ◀ ▶ wählen, Tastenbelegung "
+            "hinzufügen, Aufnahme starten, Ⓐ sendet {ptt}. Stelle danach unter „Sprache & Video“ den "
+            "Eingabemodus auf Push-to-Talk.\n\n"
             "Kein Push-to-Talk? Einfach mit RB weiter."
         ),
-        "wizard.ptt.primary": "{ptt} senden",
+        "wizard.leave.title": "Call verlassen",
+        "wizard.leave.body": (
+            "Discord hat kein festes Kürzel zum Verlassen eines Calls, aber eine Aktion für Tastenbelegungen. "
+            "HandheldCord nutzt sie, wenn du in Discord Ⓑ gedrückt hältst – nach einer Rückfrage.\n\n"
+            "Tastenbelegung hinzufügen, die Aktion zum Trennen vom Sprachkanal wählen, Aufnahme starten – "
+            "Ⓐ sendet {leave}. Diese Taste musst du nicht am Handheld belegen."
+        ),
         "wizard.test.title": "Testen",
         "wizard.test.body": (
-            "Ⓐ löst Mute über {mute} aus, Ⓧ Deafen über {deafen}. In Discord sollte sich das Mikrofon- "
-            "bzw. Kopfhörersymbol ändern.\n\n"
-            "Passiert nichts? Geh mit Ⓑ zurück und nimm das Tastenkürzel neu auf."
+            "Solange die Seite „Tastenbelegungen“ offen ist, schaltet Discord seine Tastenkürzel ab. Ⓐ schließt "
+            "deshalb zuerst die Einstellungen und löst dann Mute über {mute} aus – das Mikrofon in Discord "
+            "sollte durchgestrichen sein.\n\n"
+            "Passiert nichts? Geh mit Ⓑ zurück und nimm die Taste neu auf."
         ),
         "wizard.test.primary": "Mute testen",
-        "wizard.test.secondary": "Deafen testen",
-        "wizard.buttons.title": "Tasten am Handheld",
+        "wizard.buttons.title": "Knöpfe am Handheld belegen",
         "wizard.buttons.body": (
-            "Im Spiel gehört der Controller dem Spiel. Lege deshalb in Armoury Crate SE, Legion Space, "
-            "MSI Center M oder Handheld Companion:\n\n"
-            "• eine Zusatztaste auf {overlay} – sie wechselt zwischen Spiel und Discord,\n"
-            "• eine Rückseitentaste auf {ptt} für Push-to-Talk,\n"
-            "• bei Bedarf weitere Tasten auf {mute} (Mute) und {deafen} (Deafen).\n\n"
-            "Keine freien Tasten? Halte ⧉ und ☰ eine halbe Sekunde gleichzeitig."
+            "Lege jetzt in deiner Handheld-App (Armoury Crate SE, Legion Space, MSI Center M oder Handheld "
+            "Companion) freie Knöpfe auf diese Tasten:\n\n"
+            "• {overlay} – Discord ⇄ Spiel\n"
+            "• {mute} – Mute\n"
+            "• {ptt} – Push-to-Talk (halten)\n\n"
+            "Mute und Push-to-Talk kommen auch im Spiel an. Nimm daher keine Tasten, die dein Spiel nutzt – "
+            "F5 und F9 sind oft Schnellspeichern und -laden."
         ),
         "wizard.conflicts.title": "Doppelte Eingaben vermeiden",
         "wizard.conflicts.body": (
@@ -246,8 +286,9 @@ STRINGS: dict[str, dict[str, str]] = {
         ),
         "wizard.done.title": "Fertig!",
         "wizard.done.body": (
-            "Im Spiel: {overlay} oder ⧉ + ☰ halten → Discord.\n"
-            "In Discord: ✛ Kanäle, LB/RB Server, Ⓨ schreiben, Ⓧ suchen, ☰ Menü, ⧉ Mute (lang: Deafen).\n\n"
+            "Im Spiel: {overlay} oder ⧉ + ☰ halten → Discord. {mute} schaltet stumm, {ptt} ist Push-to-Talk.\n"
+            "In Discord: ✛ Kanäle, LB/RB Server, Ⓧ suchen (halten: Sprachkanäle), Ⓑ zurück "
+            "(halten: Call verlassen), Ⓨ schreiben, ☰ Menü, ⧉ Mute.\n\n"
             "Die Einrichtung findest du jederzeit im Menü (☰)."
         ),
         "wizard.done.primary": "Los geht's",

@@ -11,17 +11,16 @@ from . import hints
 from .actions import normalize_action
 from .menu import MenuItem, MenuModel
 from .osk import LETTER_ROWS, OskModel
-from .wizard import WizardModel
+from .wizard import KEY_CHOICES, WizardModel
 
 log = logging.getLogger(__name__)
 
-# Contexts in which Discord is the foreground window.
-DISCORD_CONTEXTS = frozenset({"discord", "discord_popup", "osk", "menu"})
 # Layers that only make sense on top of Discord; they close when it loses the foreground.
-DISCORD_LAYERS = ("osk", "menu", "discord_popup")
+DISCORD_LAYERS = ("osk", "menu", "confirm", "discord_popup")
 LAUNCH_TIMEOUT_S = 30.0
 SWITCHER_TYPE_DELAY_S = 0.15
 SWITCHER_ENTER_DELAY_S = 0.6
+SETTINGS_DELAY_S = 0.3
 _EMPTY = ContextBindings()
 
 
@@ -45,6 +44,7 @@ class Ui(Protocol):
     def toast(self, text: str) -> None: ...
     def osk_changed(self, snapshot: dict | None) -> None: ...
     def menu_changed(self, snapshot: dict | None) -> None: ...
+    def confirm_changed(self, snapshot: dict | None) -> None: ...
     def wizard_changed(self, snapshot: dict | None) -> None: ...
 
 
@@ -71,10 +71,13 @@ class Router:
         self.t = t
         self.schedule = schedule
         self.clock = clock
+        # Called after the setup assistant changed the overlay key, so it can be registered again.
+        self.on_keys_changed: Callable[[], None] | None = None
         self.stack: list[str] = []
         self.context = ""
         self.menu = MenuModel()
         self.wizard = WizardModel()
+        self._pending: str | None = None  # action waiting for the confirmation dialog
         self._launch_deadline = 0.0
         self._next_launch_probe = 0.0
         self._next_wizard_refresh = 0.0
@@ -121,8 +124,13 @@ class Router:
             self._run(fired)
 
     def on_hotkey(self, name: str) -> None:
-        if name == "overlay":
-            self._run(Fired("overlay.toggle"))
+        if name != "overlay":
+            return
+        if self.stack and self.stack[-1] == "wizard" and self.wizard.step.id == "overlay":
+            # The user is testing the button they just mapped.
+            self.ui.toast(self.t("toast.key_detected", key=self.cfg.handheld_keys["overlay"]))
+            return
+        self._run(Fired("overlay.toggle"))
 
     def open_wizard(self) -> None:
         self._run(Fired("wizard.open"))
@@ -135,12 +143,20 @@ class Router:
         if "menu" in self.stack and self.menu.select(index):
             self._menu_select()
 
+    def confirm_answer(self, yes: bool) -> None:
+        if "confirm" in self.stack:
+            self._run(Fired("confirm.yes" if yes else "confirm.no"))
+
     def wizard_button(self, which: str) -> None:
         action = {
             "primary": "wizard.primary",
             "secondary": "wizard.secondary",
             "back": "wizard.back",
             "next": "wizard.next",
+            "collapse": "wizard.collapse",
+            "move": "wizard.move",
+            "key_prev": "wizard.key_prev",
+            "key_next": "wizard.key_next",
         }.get(which)
         if action and "wizard" in self.stack:
             self._run(Fired(action))
@@ -167,8 +183,10 @@ class Router:
     def _close_layers(self) -> None:
         for name in DISCORD_LAYERS:
             self._pop(name)
+        self._pending = None
         self.ui.osk_changed(None)
         self.ui.menu_changed(None)
+        self.ui.confirm_changed(None)
 
     # --- dispatch -------------------------------------------------------------
 
@@ -179,8 +197,9 @@ class Router:
             if action.startswith("key:"):
                 {"fire": self.keys.tap, "down": self.keys.down, "up": self.keys.up}[phase](action[4:])
             elif action == "voice.ptt" and phase != "fire":
-                send = self.keys.down if phase == "down" else self.keys.up
-                send(self.cfg.global_keybinds["ptt"])
+                combo = self.cfg.handheld_keys["ptt"]
+                if combo:
+                    (self.keys.down if phase == "down" else self.keys.up)(combo)
             elif phase != "fire":
                 return
             elif action.startswith("text:"):
@@ -199,13 +218,18 @@ class Router:
     def _build_handlers(self) -> dict[str, Callable[[], None]]:
         return {
             "overlay.toggle": self._toggle_overlay,
-            "voice.mute": lambda: self._voice("mute"),
-            "voice.deafen": lambda: self._voice("deafen"),
-            "voice.ptt": lambda: self.keys.tap(self.cfg.global_keybinds["ptt"]),
+            "voice.mute": self._mute,
+            "voice.ptt": lambda: self._tap(self.cfg.handheld_keys["ptt"]),
+            "voice.leave": lambda: self._ask("confirm.leave", "voice.disconnect"),
+            "voice.disconnect": lambda: self._tap(self.cfg.discord_keybinds["disconnect"]),
             "discord.switcher": lambda: self._open_popup("switcher"),
+            "discord.voice_channels": self._voice_channels,
             "discord.emoji": lambda: self._open_popup("emoji"),
+            "discord.settings": self._open_settings,
             "popup.accept": lambda: self._close_popup("Enter"),
             "popup.close": lambda: self._close_popup("Esc"),
+            "confirm.yes": lambda: self._answer(True),
+            "confirm.no": lambda: self._answer(False),
             "osk.open": self._osk_open,
             "osk.close": self._osk_close,
             "osk.up": lambda: self._osk_edit(lambda osk: osk.move(-1, 0)),
@@ -233,7 +257,15 @@ class Router:
             "wizard.next": lambda: self._wizard_move(self.wizard.next),
             "wizard.prev": lambda: self._wizard_move(self.wizard.prev),
             "wizard.back": self._wizard_back,
+            "wizard.key_prev": lambda: self._wizard_key(-1),
+            "wizard.key_next": lambda: self._wizard_key(1),
+            "wizard.collapse": lambda: self._wizard_change(self.wizard.toggle_collapsed),
+            "wizard.move": lambda: self._wizard_change(self.wizard.move),
         }
+
+    def _tap(self, combo: str) -> None:
+        if combo:
+            self.keys.tap(combo)
 
     # --- Discord window and voice ---------------------------------------------
 
@@ -262,15 +294,23 @@ class Router:
             self._launch_deadline = 0.0
             self.discord.show()
 
-    def _voice(self, which: str) -> None:
-        # Discord's in-app shortcut works while it has focus; in a game only
-        # the global keybind recorded in the setup assistant reaches it.
-        if self.context in DISCORD_CONTEXTS:
-            combo = self.cfg.discord_shortcuts[which]
-        else:
-            combo = self.cfg.global_keybinds[which]
-        self.keys.tap(combo)
-        self.ui.toast(self.t(f"toast.{which}"))
+    def _mute(self) -> None:
+        # The global keybind recorded in the setup assistant works in Discord and in games.
+        combo = self.cfg.handheld_keys["mute"]
+        if combo:
+            self.keys.tap(combo)
+            self.ui.toast(self.t("toast.mute"))
+
+    def _voice_channels(self) -> None:
+        """After "!" Discord's quick switcher lists only voice channels; Enter joins the chosen one."""
+        self._open_popup("switcher")
+        self.schedule(SWITCHER_TYPE_DELAY_S, lambda: self.keys.type_text("!"))
+
+    def _open_settings(self) -> None:
+        result = self.discord.show()
+        self._after_show(result)
+        if result == "discord":
+            self.schedule(SETTINGS_DELAY_S, lambda: self.keys.tap(self.cfg.discord_shortcuts["settings"]))
 
     def _open_popup(self, shortcut: str) -> None:
         self.keys.tap(self.cfg.discord_shortcuts[shortcut])
@@ -279,6 +319,24 @@ class Router:
     def _close_popup(self, key: str) -> None:
         self.keys.tap(key)
         self._pop("discord_popup")
+
+    def _ask(self, question: str, action: str) -> None:
+        """Show a yes/no dialog (Ⓐ/Ⓑ); the action only runs on yes."""
+        self._pending = action
+        self._push("confirm")
+        self.ui.confirm_changed({
+            "title": self.t(f"{question}.title"),
+            "body": self.t(f"{question}.body"),
+            "yes": self.t("confirm.yes"),
+            "no": self.t("confirm.no"),
+        })
+
+    def _answer(self, yes: bool) -> None:
+        action, self._pending = self._pending, None
+        self._pop("confirm")
+        self.ui.confirm_changed(None)
+        if yes and action:
+            self._run(Fired(action))
 
     def _reply(self, index: int) -> None:
         replies = self.cfg.quick_replies
@@ -339,7 +397,8 @@ class Router:
         voice, app = t("menu.section.voice"), t("menu.section.app")
         items += [
             MenuItem(t("menu.mute"), "voice.mute", voice),
-            MenuItem(t("menu.deafen"), "voice.deafen", voice),
+            MenuItem(t("menu.voice_channels"), "discord.voice_channels", voice),
+            MenuItem(t("menu.leave"), "voice.leave", voice),
             MenuItem(t("menu.to_game"), "overlay.toggle", app),
             MenuItem(t("menu.setup"), "wizard.open", app),
         ]
@@ -366,8 +425,15 @@ class Router:
 
     # --- setup assistant ------------------------------------------------------
 
+    def _wizard_keys(self) -> dict[str, str]:
+        """Everything the assistant records or shows: the handheld keys plus the leave-call keybind."""
+        keys = dict(self.cfg.handheld_keys)
+        keys["leave"] = self.cfg.discord_keybinds["disconnect"]
+        return keys
+
     def _wizard_open(self) -> None:
         self.wizard.index = 0
+        self.wizard.collapsed = False
         self._push("wizard")
         self._wizard_publish()
 
@@ -380,6 +446,10 @@ class Router:
     def _wizard_move(self, move: Callable[[], bool]) -> None:
         if move():
             self._wizard_publish()
+
+    def _wizard_change(self, change: Callable[[], None]) -> None:
+        change()
+        self._wizard_publish()
 
     def _wizard_back(self) -> None:
         if self.wizard.prev():
@@ -404,14 +474,48 @@ class Router:
         elif action == "discord.show":
             self._after_show(self.discord.show())
             self._wizard_publish()
-        elif action.startswith("send."):
-            # Sent to the foreground window: Discord's "Record Keybind" field.
-            combo = self.cfg.global_keybinds[action[5:]]
+        elif action == "discord.settings":
+            self._open_settings()
+        elif action == "record":
+            # Goes to the foreground window, which must be Discord's "Record Keybind" field.
+            combo = self._wizard_keys().get(self.wizard.step.record or "", "")
+            if not combo:
+                return
+            if not self.discord.is_discord(self.discord.foreground()):
+                self.ui.toast(self.t("toast.discord_first"))
+                return
             self.keys.tap(combo)
             self.ui.toast(self.t("toast.sent", key=combo))
+        elif action == "test.mute":
+            combo = self.cfg.handheld_keys["mute"]
+            if not combo:
+                return
+            if self.discord.is_discord(self.discord.foreground()):
+                # Discord ignores its keybinds while the keybind settings are open, so leave them first.
+                self.keys.tap("Esc")
+                self.schedule(SETTINGS_DELAY_S, lambda: self.keys.tap(combo))
+            else:
+                self.keys.tap(combo)
+            self.ui.toast(self.t("toast.sent", key=combo))
+
+    def _wizard_key(self, delta: int) -> None:
+        """◀ ▶ cycle the step's handheld key through F1-F12, skipping keys used for something else."""
+        name = self.wizard.step.key
+        if not name:
+            return
+        keys = self.cfg.handheld_keys
+        taken = {value for other, value in keys.items() if other != name}
+        choices = [key for key in KEY_CHOICES if key not in taken]
+        current = keys.get(name)
+        if current in choices:
+            new = choices[(choices.index(current) + delta) % len(choices)]
+        else:
+            new = choices[0] if delta > 0 else choices[-1]
+        self.cfg.set_handheld_key(name, new)
+        if name == "overlay" and self.on_keys_changed:
+            self.on_keys_changed()
+        self._wizard_publish()
 
     def _wizard_publish(self) -> None:
-        params = dict(self.cfg.global_keybinds)
-        params["overlay"] = self.cfg.overlay_hotkey
-        params["status"] = self.t("wizard.status.found" if self.discord.find() else "wizard.status.missing")
-        self.ui.wizard_changed(self.wizard.snapshot(self.t, **params))
+        status = self.t("wizard.status.found" if self.discord.find() else "wizard.status.missing")
+        self.ui.wizard_changed(self.wizard.snapshot(self.t, self._wizard_keys(), status=status))

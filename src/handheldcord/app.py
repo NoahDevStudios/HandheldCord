@@ -96,14 +96,19 @@ def main(argv: list[str] | None = None) -> int:
     timer.start(FAST_POLL_MS)
 
     hotkeys = GlobalHotkeys(bridge.hotkeyPressed.emit)
-    hotkeys.start({"overlay": cfg.overlay_hotkey})
+
+    def register_hotkeys() -> None:
+        hotkeys.start({"overlay": router.cfg.handheld_keys["overlay"]})
+
+    register_hotkeys()
+    router.on_keys_changed = register_hotkeys
 
     def reload_config() -> None:
         new_cfg = config.load(config_path)
         router.apply_config(new_cfg)
         discord.maximize = new_cfg.maximize_discord
         bridge.show_hints = new_cfg.show_hints
-        hotkeys.start({"overlay": new_cfg.overlay_hotkey})
+        register_hotkeys()
         bridge.toast(t("toast.config_error" if new_cfg.error else "toast.config_reloaded"))
 
     tray, tray_menu = _create_tray(app, t, router, config_path, reload_config)

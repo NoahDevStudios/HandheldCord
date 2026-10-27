@@ -61,6 +61,7 @@ class FakeUi:
         self.toasts = []
         self.osk = None
         self.menu = None
+        self.confirm = None
         self.wizard = None
 
     def context_changed(self, context, hint_list):
@@ -75,6 +76,9 @@ class FakeUi:
 
     def menu_changed(self, snapshot):
         self.menu = snapshot
+
+    def confirm_changed(self, snapshot):
+        self.confirm = snapshot
 
     def wizard_changed(self, snapshot):
         self.wizard = snapshot

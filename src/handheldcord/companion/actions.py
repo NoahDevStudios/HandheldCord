@@ -5,15 +5,17 @@ from ..windows.keys import canonical
 
 SIMPLE_ACTIONS = frozenset({
     "overlay.toggle",
-    "voice.mute", "voice.deafen", "voice.ptt",
-    "discord.switcher", "discord.emoji",
+    "voice.mute", "voice.ptt", "voice.leave", "voice.disconnect",
+    "discord.switcher", "discord.voice_channels", "discord.emoji", "discord.settings",
     "popup.accept", "popup.close",
+    "confirm.yes", "confirm.no",
     "osk.open", "osk.close", "osk.up", "osk.down", "osk.left", "osk.right", "osk.press",
     "osk.backspace", "osk.space", "osk.shift", "osk.symbols",
     "osk.cursor_left", "osk.cursor_right", "osk.insert", "osk.send",
     "menu.open", "menu.close", "menu.up", "menu.down", "menu.select",
     "wizard.open", "wizard.close", "wizard.primary", "wizard.secondary",
     "wizard.next", "wizard.prev", "wizard.back",
+    "wizard.key_prev", "wizard.key_next", "wizard.collapse", "wizard.move",
 })
 
 # "reply:0" sends quick reply 0, "favorite:0" opens favorite 0.
@@ -60,12 +62,13 @@ DEFAULT_BINDINGS: dict[str, list[dict]] = {
         {"on": "RS_UP", "do": "key:PageUp", "repeat": True},
         {"on": "RS_DOWN", "do": "key:PageDown", "repeat": True},
         {"on": "A", "do": "key:Enter"},
-        {"on": "B", "do": "key:Esc"},
-        {"on": "X", "do": "discord.switcher"},
+        # Alt+Up/Down skip voice channels, so holding X lists them in the quick switcher.
+        {"on": "B", "tap": "key:Esc", "long": "voice.leave"},
+        {"on": "X", "tap": "discord.switcher", "long": "discord.voice_channels"},
         {"on": "Y", "do": "osk.open"},
         {"on": "L3", "do": "discord.emoji"},
         {"on": "MENU", "do": "menu.open"},
-        {"on": "VIEW", "tap": "voice.mute", "long": "voice.deafen"},
+        {"on": "VIEW", "do": "voice.mute"},
         _TO_GAME,
     ],
     # Discord's quick switcher or emoji picker is open.
@@ -96,14 +99,20 @@ DEFAULT_BINDINGS: dict[str, list[dict]] = {
         {"on": "B", "do": "menu.close"},
         {"on": "MENU", "do": "menu.close"},
     ],
+    "confirm": [
+        {"on": "A", "do": "confirm.yes"},
+        {"on": "B", "do": "confirm.no"},
+    ],
     "wizard": [
         {"on": "A", "do": "wizard.primary"},
         {"on": "X", "do": "wizard.secondary"},
         {"on": "B", "do": "wizard.back"},
+        {"on": "Y", "do": "wizard.collapse"},
+        {"on": "VIEW", "do": "wizard.move"},
         {"on": "RB", "do": "wizard.next"},
-        {"on": "DPAD_RIGHT", "do": "wizard.next"},
         {"on": "LB", "do": "wizard.prev"},
-        {"on": "DPAD_LEFT", "do": "wizard.prev"},
+        {"on": "DPAD_LEFT", "do": "wizard.key_prev", "repeat": True},
+        {"on": "DPAD_RIGHT", "do": "wizard.key_next", "repeat": True},
         {"on": "MENU", "do": "wizard.close"},
     ],
 }
