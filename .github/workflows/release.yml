@@ -1,0 +1,36 @@
+name: Release
+
+# Push a tag like v0.1.0 to build the .exe and publish it as a GitHub release.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - run: python -m pip install -e ".[dev,build]"
+      - run: python -m pytest -q
+      - name: Check that the tag matches the package version
+        shell: pwsh
+        run: |
+          $version = python -c "import handheldcord; print(handheldcord.__version__)"
+          if ("v$version" -ne "${{ github.ref_name }}") { throw "Tag ${{ github.ref_name }} does not match version $version" }
+      - run: python packaging/build.py
+      - name: Publish the release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $flags = @()
+          if ($tag -like "v0.*") { $flags += "--prerelease" }
+          $zip = (Get-ChildItem dist/*.zip).FullName
+          gh release create $tag $zip --title "HandheldCord $tag" --notes-file packaging/release-notes.md @flags
