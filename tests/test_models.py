@@ -45,6 +45,7 @@ def test_first_start_writes_the_defaults(tmp_path):
     assert (tmp_path / "config.json").exists()
     assert cfg.handheld_keys == {"overlay": "F10", "mute": "F6", "ptt": "F7"}
     assert cfg.discord_shortcuts["settings"] == "Ctrl+,"
+    assert cfg.autostart == "off"
     assert not cfg.setup_done
 
 
@@ -76,10 +77,27 @@ def test_version_1_config_is_migrated_to_standard_keys(tmp_path):
     assert cfg.handheld_keys == {"overlay": "F10", "mute": "F6", "ptt": "F7"}
     assert not cfg.setup_done  # Discord's keybinds have to be recorded again
     saved = json.loads(path.read_text("utf-8"))
-    assert saved["config_version"] == 2
+    assert saved["config_version"] == config.CONFIG_VERSION
     assert "global_keybinds" not in saved and "overlay_hotkey" not in saved
     assert "mute" not in saved["discord_shortcuts"]
     assert saved["quick_replies"] == ["hi"]
+    assert "setup_step" not in saved  # the whole assistant runs again anyway
+
+
+def test_finished_setup_from_version_2_shows_only_the_autostart_step(tmp_path):
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps({"config_version": 2, "setup_done": True}), "utf-8")
+    cfg = config.load(path)
+    assert cfg.setup_done
+    assert cfg.setup_step == "autostart"
+    cfg.mark_setup_done()
+    assert config.load(path).setup_step == ""
+
+
+def test_unknown_autostart_mode_means_off(tmp_path):
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps({"config_version": 3, "autostart": "always"}), "utf-8")
+    assert config.load(path).autostart == "off"
 
 
 def test_broken_config_is_never_overwritten(tmp_path):
@@ -107,6 +125,9 @@ def test_every_referenced_string_exists():
         assert {f"wizard.{step.id}.title", f"wizard.{step.id}.body"} <= keys
         if step.primary and step.primary != "record":
             assert f"wizard.{step.id}.primary" in keys
+        if step.option:
+            labels = {f"wizard.{step.option}.{mode}" for mode in config.AUTOSTART_MODES}
+            assert {f"wizard.{step.option}.caption", *labels} <= keys
     assert set(LABELS.values()) <= keys
 
 

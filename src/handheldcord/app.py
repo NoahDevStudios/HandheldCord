@@ -15,7 +15,7 @@ from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
-from . import __version__, config
+from . import __author__, __version__, config
 from .companion.actions import DEFAULT_BINDINGS
 from .companion.discord_window import DiscordWindows
 from .companion.router import Router
@@ -25,7 +25,7 @@ from .input.xinput import XInputBackend
 from .ui.bridge import Bridge
 from .ui.icon import render_icon
 from .ui.overlay import OVERLAYS, QML_DIR, prepare_overlay
-from .windows import win32
+from .windows import autostart, win32
 from .windows.hotkeys import GlobalHotkeys
 from .windows.sender import KeySender
 
@@ -33,6 +33,7 @@ log = logging.getLogger("handheldcord")
 
 FAST_POLL_MS = 16  # ~60 Hz while Discord or one of our overlays is in front
 SLOW_POLL_MS = 33  # in a game only the overlay chord is watched
+WAIT_POLL_MS = 2000  # autostart "with Discord": how often to look for a Discord process
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -93,15 +94,20 @@ def main(argv: list[str] | None = None) -> int:
             timer.setInterval(interval)
 
     timer.timeout.connect(tick)
-    timer.start(FAST_POLL_MS)
 
     hotkeys = GlobalHotkeys(bridge.hotkeyPressed.emit)
 
     def register_hotkeys() -> None:
-        hotkeys.start({"overlay": router.cfg.handheld_keys["overlay"]})
+        if timer.isActive():  # not while waiting for Discord
+            hotkeys.start({"overlay": router.cfg.handheld_keys["overlay"]})
 
-    register_hotkeys()
+    def apply_autostart() -> None:
+        if not args.dry_run:
+            autostart.apply(router.cfg.autostart)
+
     router.on_keys_changed = register_hotkeys
+    router.on_autostart_changed = apply_autostart
+    apply_autostart()  # also follows the folder if HandheldCord was moved since
 
     def reload_config() -> None:
         new_cfg = config.load(config_path)
@@ -109,11 +115,42 @@ def main(argv: list[str] | None = None) -> int:
         discord.maximize = new_cfg.maximize_discord
         bridge.show_hints = new_cfg.show_hints
         register_hotkeys()
+        apply_autostart()
         bridge.toast(t("toast.config_error" if new_cfg.error else "toast.config_reloaded"))
 
-    tray, tray_menu = _create_tray(app, t, router, config_path, reload_config)
-    if args.wizard or not cfg.setup_done:
-        QTimer.singleShot(600, router.open_wizard)
+    waiting = QTimer()
+
+    def start(show_setup: bool = True) -> None:
+        """Take over the controller and the overlay key: right away, or once Discord runs."""
+        if timer.isActive():
+            return
+        waiting.stop()
+        timer.start(FAST_POLL_MS)
+        register_hotkeys()
+        tray.setToolTip(t("tray.tooltip"))
+        if not show_setup:
+            return
+        if args.wizard or not router.cfg.setup_done:
+            QTimer.singleShot(600, router.open_wizard)
+        elif router.cfg.setup_step:  # a step added by an update
+            QTimer.singleShot(600, lambda: router.open_wizard(router.cfg.setup_step))
+
+    def open_setup() -> None:
+        start(show_setup=False)
+        router.open_wizard()
+
+    def check_discord() -> None:
+        if discord.running():
+            start()
+
+    tray, tray_menu = _create_tray(app, t, router, config_path, reload_config, open_setup)
+    waiting.timeout.connect(check_discord)
+    if args.wait_for_discord and not discord.running():
+        log.info("Waiting for Discord")
+        tray.setToolTip(t("tray.waiting"))
+        waiting.start(WAIT_POLL_MS)
+    else:
+        start()
     if args.exit_after:
         QTimer.singleShot(int(args.exit_after * 1000), app.quit)
 
@@ -136,6 +173,9 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--debug", action="store_true", help="verbose logging")
     parser.add_argument("--debug-input", action="store_true", help="log every controller button change")
     parser.add_argument("--wizard", action="store_true", help="open the setup assistant on start")
+    parser.add_argument(
+        autostart.WAIT_FLAG, action="store_true", help="wait in the tray until Discord runs (used by autostart)",
+    )
     parser.add_argument("--exit-after", type=float, metavar="SECONDS", help=argparse.SUPPRESS)
     parser.add_argument("--version", action="version", version=f"HandheldCord {__version__}")
     return parser.parse_args(argv)
@@ -171,14 +211,17 @@ def _open_file(path: Path) -> None:
         subprocess.Popen(["notepad.exe", str(path)])
 
 
-def _create_tray(app, t, router, config_path: Path, reload_config) -> tuple[QSystemTrayIcon, QMenu]:
+def _create_tray(app, t, router, config_path: Path, reload_config, open_setup) -> tuple[QSystemTrayIcon, QMenu]:
     tray = QSystemTrayIcon(_app_icon(), app)
     tray.setToolTip(t("tray.tooltip"))
     menu = QMenu()
+    menu.addAction(t("app.credit", version=__version__, author=__author__)).setEnabled(False)
+    menu.addSeparator()
     entries = (
-        (t("tray.setup"), router.open_wizard),
+        (t("tray.setup"), open_setup),
         (t("tray.config"), lambda: _open_file(config_path)),
         (t("tray.reload"), reload_config),
+        (t("tray.support"), router.open_support),
         None,
         (t("tray.quit"), app.quit),
     )

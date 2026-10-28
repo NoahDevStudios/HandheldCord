@@ -11,11 +11,13 @@ Window {
     readonly property int rowHeight: 48
     readonly property int headerHeight: 30
     readonly property int headerCount: items.filter(item => item.header !== "").length
+    readonly property int footerSpace: footer.visible ? footer.height + 10 : 0
 
     visible: m.visible === true
     color: "#1b1f24"
     width: Math.min(560, Screen.width - 32)
-    height: Math.min(title.height + 44 + items.length * rowHeight + headerCount * headerHeight, Screen.height - 64)
+    height: Math.min(title.height + 44 + items.length * rowHeight + headerCount * headerHeight + footerSpace,
+                     Screen.height - 64)
     x: Screen.virtualX + (Screen.width - width) / 2
     y: Screen.virtualY + (Screen.height - height) / 2
 
@@ -34,7 +36,7 @@ Window {
         x: 16
         y: title.y + title.height + 10
         width: win.width - 32
-        height: win.height - y - 12
+        height: win.height - y - 12 - win.footerSpace
         clip: true
         model: win.items
         currentIndex: win.m.index !== undefined ? win.m.index : -1
@@ -77,5 +79,18 @@ Window {
                 }
             }
         }
+    }
+
+    // Version and author.
+    Text {
+        id: footer
+        x: 24
+        y: win.height - height - 12
+        width: win.width - 48
+        visible: text !== ""
+        text: win.m.footer || ""
+        elide: Text.ElideRight
+        color: "#8b949e"
+        font.pixelSize: 13
     }
 }

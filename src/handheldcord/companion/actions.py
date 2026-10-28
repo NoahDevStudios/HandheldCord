@@ -4,7 +4,7 @@ from __future__ import annotations
 from ..windows.keys import canonical
 
 SIMPLE_ACTIONS = frozenset({
-    "overlay.toggle",
+    "overlay.toggle", "app.support",
     "voice.mute", "voice.ptt", "voice.leave", "voice.disconnect",
     "discord.switcher", "discord.voice_channels", "discord.emoji", "discord.settings",
     "popup.accept", "popup.close",

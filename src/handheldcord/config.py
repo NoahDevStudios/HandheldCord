@@ -15,8 +15,10 @@ log = logging.getLogger(__name__)
 
 APP_DIR = Path(os.environ.get("APPDATA") or Path.home()) / "HandheldCord"
 DEFAULT_PATH = APP_DIR / "config.json"
-CONFIG_VERSION = 2
+CONFIG_VERSION = 3
 MIN_REPEAT_INTERVAL_S = 0.02
+# "discord" starts with Windows too, but waits in the tray until Discord runs.
+AUTOSTART_MODES = ("off", "discord", "windows")
 
 DEFAULTS: dict = {
     "config_version": CONFIG_VERSION,
@@ -24,6 +26,8 @@ DEFAULTS: dict = {
     "osk_layout": "auto",
     "maximize_discord": True,
     "show_hints": True,
+    # "off", "discord" (start with Windows, wait in the tray until Discord runs) or "windows".
+    "autostart": "off",
     # Standard keys you map to spare handheld buttons; vendor apps only offer F1-F12 and the like.
     #   overlay  HandheldCord switches between the game and Discord
     #   mute/ptt recorded as global keybinds in Discord by the setup assistant
@@ -65,6 +69,15 @@ class Config:
     @property
     def show_hints(self) -> bool:
         return bool(self.data.get("show_hints", True))
+
+    @property
+    def autostart(self) -> str:
+        value = self.data.get("autostart")
+        return value if value in AUTOSTART_MODES else "off"
+
+    def set_autostart(self, mode: str) -> None:
+        self.data["autostart"] = mode
+        self.save()
 
     @property
     def handheld_keys(self) -> dict[str, str]:
@@ -130,8 +143,14 @@ class Config:
     def setup_done(self) -> bool:
         return bool(self.data.get("setup_done"))
 
+    @property
+    def setup_step(self) -> str:
+        """A step an update added to the assistant, shown once on the next start ("" for none)."""
+        return str(self.data.get("setup_step") or "")
+
     def mark_setup_done(self) -> None:
         self.data["setup_done"] = True
+        self.data.pop("setup_step", None)
         self.save()
 
     def save(self) -> None:
@@ -191,8 +210,19 @@ def load(path: Path = DEFAULT_PATH) -> Config:
 
 def _migrate(user: dict) -> bool:
     """Bring a config file from an older version up to date; returns True if it changed."""
-    if user.get("config_version", 1) >= CONFIG_VERSION:
+    version = user.get("config_version", 1)
+    if version >= CONFIG_VERSION:
         return False
+    if version < 2:
+        _migrate_v1(user)
+    if version < 3 and user.get("setup_done"):
+        # Autostart came with version 3: show that step once instead of the whole assistant.
+        user["setup_step"] = "autostart"
+    user["config_version"] = CONFIG_VERSION
+    return True
+
+
+def _migrate_v1(user: dict) -> None:
     # v1 used F13-F15 and Ctrl+Alt+Shift+F12, which the handheld vendor apps cannot map.
     old_keybinds = user.pop("global_keybinds", None)
     old_keybinds = old_keybinds if isinstance(old_keybinds, dict) else {}
@@ -207,8 +237,6 @@ def _migrate(user: dict) -> bool:
         shortcuts.pop("deafen", None)
     # The keys changed, so Discord's keybinds have to be recorded again.
     user["setup_done"] = False
-    user["config_version"] = CONFIG_VERSION
-    return True
 
 
 def _merge(base: dict, override: dict) -> None:

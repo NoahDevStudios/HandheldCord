@@ -4,4 +4,6 @@
 2. Start `HandheldCord.exe`. The build is not signed yet, so Windows SmartScreen may warn: choose **More info → Run anyway**.
 3. The setup assistant opens on first start.
 
-Requires the official Discord desktop app. This is an early preview – please report problems as issues.
+Updating: quit HandheldCord from the tray icon, replace the folder and start it again – your settings are kept.
+
+Requires the official Discord desktop app. This is an early preview – questions and bug reports are welcome in the [HandheldCord Discord](https://discord.gg/7mNGV3PtZ4).

@@ -1,7 +1,8 @@
 """The QObject exposed to QML as "hc": overlay state goes in, touch input comes out."""
 from __future__ import annotations
 
-from PySide6.QtCore import Property, QObject, Signal, Slot
+from PySide6.QtCore import Property, QObject, QUrl, Signal, Slot
+from PySide6.QtGui import QDesktopServices
 
 # The hint bar is only useful while Discord or one of our overlays is in front.
 HINT_CONTEXTS = frozenset({"discord", "discord_popup", "osk", "menu", "confirm"})
@@ -83,6 +84,9 @@ class Bridge(QObject):
     def wizard_changed(self, snapshot: dict | None) -> None:
         self._wizard = {**snapshot, "visible": True} if snapshot else {"visible": False}
         self.wizardChanged.emit()
+
+    def open_url(self, url: str) -> None:
+        QDesktopServices.openUrl(QUrl(url))
 
     # --- properties read by QML -----------------------------------------------
 

@@ -43,6 +43,8 @@ STRINGS: dict[str, dict[str, str]] = {
         "toast.discord_first": "Open Discord's settings first (Ⓧ)",
         "toast.config_reloaded": "Configuration reloaded",
         "toast.config_error": "Configuration has errors – using defaults",
+        "toast.support": "Opening the support Discord …",
+        "app.credit": "HandheldCord {version} · by {author}",
         "osk.space": "Space",
         "osk.insert": "Insert",
         "osk.send": "Send",
@@ -57,14 +59,17 @@ STRINGS: dict[str, dict[str, str]] = {
         "menu.leave": "Leave the call",
         "menu.to_game": "Back to the game",
         "menu.setup": "Open setup",
+        "menu.support": "Support & bug reports (Discord)",
         "confirm.yes": "Yes",
         "confirm.no": "No",
         "confirm.leave.title": "Leave the call?",
         "confirm.leave.body": "You will be disconnected from voice.",
         "tray.tooltip": "HandheldCord – companion mode",
+        "tray.waiting": "HandheldCord – waiting for Discord",
         "tray.setup": "Setup …",
         "tray.config": "Open configuration",
         "tray.reload": "Reload configuration",
+        "tray.support": "Support & bug reports (Discord)",
         "tray.quit": "Quit",
         "wizard.next": "Next",
         "wizard.back": "Back",
@@ -137,12 +142,25 @@ STRINGS: dict[str, dict[str, str]] = {
             "Discord receives every input twice. Turn that desktop control off for your controller "
             "(in Steam: the desktop layout) while you use HandheldCord."
         ),
+        "wizard.autostart.title": "Start automatically",
+        "wizard.autostart.body": (
+            "Should HandheldCord start by itself? Choose with ◀ ▶:\n\n"
+            "• Off – you start HandheldCord yourself.\n"
+            "• With Discord – starts with Windows and waits in the tray. It only takes over the controller "
+            "and your Discord button once Discord is running.\n"
+            "• With Windows – starts with Windows and is ready right away; your Discord button then "
+            "starts Discord too."
+        ),
+        "wizard.autostart.caption": "Autostart",
+        "wizard.autostart.off": "Off",
+        "wizard.autostart.discord": "With Discord",
+        "wizard.autostart.windows": "With Windows",
         "wizard.done.title": "All set!",
         "wizard.done.body": (
             "In a game: {overlay} or hold ⧉ + ☰ → Discord. {mute} mutes, {ptt} is push-to-talk.\n"
             "In Discord: ✛ channels, LB/RB servers, Ⓧ search (hold: voice channels), Ⓑ back "
             "(hold: leave call), Ⓨ write, ☰ menu, ⧉ mute.\n\n"
-            "You can reopen this setup from the menu (☰) at any time."
+            "This setup and the support Discord are in the menu (☰) at any time."
         ),
         "wizard.done.primary": "Let's go",
     },
@@ -187,6 +205,8 @@ STRINGS: dict[str, dict[str, str]] = {
         "toast.discord_first": "Öffne zuerst die Discord-Einstellungen (Ⓧ)",
         "toast.config_reloaded": "Konfiguration neu geladen",
         "toast.config_error": "Konfiguration fehlerhaft – Standardwerte aktiv",
+        "toast.support": "Support-Discord wird geöffnet …",
+        "app.credit": "HandheldCord {version} · von {author}",
         "osk.space": "Leerzeichen",
         "osk.insert": "Einfügen",
         "osk.send": "Senden",
@@ -201,14 +221,17 @@ STRINGS: dict[str, dict[str, str]] = {
         "menu.leave": "Call verlassen",
         "menu.to_game": "Zurück zum Spiel",
         "menu.setup": "Einrichtung öffnen",
+        "menu.support": "Support & Bugs (Discord)",
         "confirm.yes": "Ja",
         "confirm.no": "Nein",
         "confirm.leave.title": "Call verlassen?",
         "confirm.leave.body": "Du wirst vom Sprachkanal getrennt.",
         "tray.tooltip": "HandheldCord – Begleitmodus",
+        "tray.waiting": "HandheldCord – wartet auf Discord",
         "tray.setup": "Einrichtung …",
         "tray.config": "Konfiguration öffnen",
         "tray.reload": "Konfiguration neu laden",
+        "tray.support": "Support & Bugs (Discord)",
         "tray.quit": "Beenden",
         "wizard.next": "Weiter",
         "wizard.back": "Zurück",
@@ -284,12 +307,25 @@ STRINGS: dict[str, dict[str, str]] = {
             "kommt in Discord jede Eingabe doppelt an. Schalte diese Desktop-Steuerung für deinen Controller "
             "ab (in Steam: das Desktop-Layout), solange du HandheldCord verwendest."
         ),
+        "wizard.autostart.title": "Automatisch starten",
+        "wizard.autostart.body": (
+            "Soll HandheldCord von selbst starten? Wähle mit ◀ ▶:\n\n"
+            "• Aus – du startest HandheldCord selbst.\n"
+            "• Mit Discord – startet mit Windows und wartet im Infobereich. Controller und Discord-Taste "
+            "übernimmt es erst, sobald Discord läuft.\n"
+            "• Mit Windows – startet mit Windows und ist sofort bereit; deine Discord-Taste startet dann "
+            "auch Discord."
+        ),
+        "wizard.autostart.caption": "Autostart",
+        "wizard.autostart.off": "Aus",
+        "wizard.autostart.discord": "Mit Discord",
+        "wizard.autostart.windows": "Mit Windows",
         "wizard.done.title": "Fertig!",
         "wizard.done.body": (
             "Im Spiel: {overlay} oder ⧉ + ☰ halten → Discord. {mute} schaltet stumm, {ptt} ist Push-to-Talk.\n"
             "In Discord: ✛ Kanäle, LB/RB Server, Ⓧ suchen (halten: Sprachkanäle), Ⓑ zurück "
             "(halten: Call verlassen), Ⓨ schreiben, ☰ Menü, ⧉ Mute.\n\n"
-            "Die Einrichtung findest du jederzeit im Menü (☰)."
+            "Die Einrichtung und den Support-Discord findest du jederzeit im Menü (☰)."
         ),
         "wizard.done.primary": "Los geht's",
     },

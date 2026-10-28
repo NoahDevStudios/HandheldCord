@@ -2,7 +2,8 @@
 
 Use Discord on Windows handhelds (ROG Ally, Legion Go, MSI Claw, …) with nothing but the controller.
 
-> **Status:** early preview (v0.1, *companion mode*). Not affiliated with or endorsed by Discord Inc.
+> **Status:** early preview (v0.3, *companion mode*). Not affiliated with or endorsed by Discord Inc.
+> Questions and bug reports: [HandheldCord Discord](https://discord.gg/7mNGV3PtZ4)
 
 ## What it does
 
@@ -30,15 +31,21 @@ It only presses keyboard shortcuts for you – the same thing a Steam Input prof
 1. Open the [Releases page](../../releases) and download `HandheldCord-<version>-win64.zip`.
 2. Extract it, for example to `Documents\HandheldCord`, and start `HandheldCord.exe`.
    The build is not signed yet, so Windows SmartScreen may warn: choose **More info → Run anyway**.
-3. Optional – start with Windows: press <kbd>Win</kbd>+<kbd>R</kbd>, enter `shell:startup` and put a shortcut to `HandheldCord.exe` into the folder that opens.
-
-No Python needed. To update, replace the folder with the new release; your settings live in `%APPDATA%\HandheldCord`.
+No Python needed. To update, quit HandheldCord from the tray icon and replace the folder with the new release; your settings live in `%APPDATA%\HandheldCord`.
 
 ## First start
 
 A setup assistant opens in a corner of the screen – **Y** collapses it, **View** moves it to another corner, so Discord stays readable behind it.
 It opens Discord's settings for you and records the keybinds HandheldCord needs; you only add the keybind and confirm with **A**.
 All keys are standard keys (F1–F12 by default), so the app that came with your handheld can map buttons to them.
+Finally you choose whether HandheldCord starts by itself:
+
+| Autostart | What happens |
+|---|---|
+| Off | You start HandheldCord yourself |
+| With Discord | Starts with Windows and waits in the tray; it takes over the controller and your Discord button only once Discord runs |
+| With Windows | Starts with Windows and is ready right away; your Discord button also starts Discord |
+
 HandheldCord then lives in the system tray; reopen the assistant from the tray icon or the quick menu.
 
 ## Controls (defaults)
@@ -66,7 +73,7 @@ The game owns the controller, so HandheldCord only listens for a few things:
 | X | Quick switcher (search channels, DMs, servers) · **hold:** voice channels |
 | Y | On-screen keyboard |
 | L3 | Emoji picker |
-| Menu | Quick menu: quick replies, favorites, mute, join or leave voice, setup |
+| Menu | Quick menu: quick replies, favorites, mute, join or leave voice, setup, support Discord |
 | View | Mute |
 | Hold View + Menu | Back to the game |
 
@@ -99,6 +106,7 @@ The keyboard never takes the focus, so the text lands in whatever Discord field 
 | `handheld_keys` | Standard keys for your handheld buttons: `overlay` (switch game ⇄ Discord), `mute`, `ptt` – easiest to pick in the setup assistant (`""` turns one off) |
 | `discord_shortcuts` | Discord's in-app shortcuts: `switcher`, `emoji`, `settings` |
 | `discord_keybinds` | Keybinds that only HandheldCord sends: `disconnect` (leave the call) |
+| `autostart` | `off`, `discord` (start with Windows, wait until Discord runs) or `windows` |
 | `language` / `osk_layout` | `auto`, `en` or `de` |
 | `maximize_discord` | Maximize Discord when bringing it to the front |
 | `show_hints` | Show the button hint bar |
@@ -131,12 +139,17 @@ Contexts: `game`, `discord`, `discord_popup`, `osk`, `menu`, `wizard`. A context
 - If Discord runs **as administrator**, Windows blocks the simulated keys – run both at the same privilege level.
 - Discord's shortcuts may change with updates; all of them are configurable.
 
+## Support
+
+Questions, ideas or bug reports: join the [HandheldCord Discord](https://discord.gg/7mNGV3PtZ4).
+The quick menu and the tray menu link to it as well. For a bug report, mention your handheld and what you pressed.
+
 ## Development
 
 Requires Python 3.11 or newer.
 
 ```powershell
-git clone <repository-url> HandheldCord
+git clone https://github.com/NoahDevStudios/HandheldCord.git
 cd HandheldCord
 python -m venv .venv
 .venv\Scripts\pip install -e .[dev]
@@ -159,6 +172,6 @@ Releases are built by GitHub Actions: bump `__version__` in `src/handheldcord/__
 
 ## License
 
-HandheldCord is free software under the [GNU General Public License v3.0 or later](LICENSE).
+HandheldCord is made by NoahDev Studios and is free software under the [GNU General Public License v3.0 or later](LICENSE).
 
 HandheldCord is an independent project. "Discord" is a trademark of Discord Inc.

@@ -63,6 +63,7 @@ class FakeUi:
         self.menu = None
         self.confirm = None
         self.wizard = None
+        self.urls = []
 
     def context_changed(self, context, hint_list):
         self.context = context
@@ -82,6 +83,9 @@ class FakeUi:
 
     def wizard_changed(self, snapshot):
         self.wizard = snapshot
+
+    def open_url(self, url):
+        self.urls.append(url)
 
 
 class Harness:

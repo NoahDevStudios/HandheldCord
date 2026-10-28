@@ -15,11 +15,13 @@ class MenuItem:
 class MenuModel:
     def __init__(self) -> None:
         self.title = ""
+        self.footer = ""
         self.items: list[MenuItem] = []
         self.index = 0
 
-    def open(self, title: str, items: Iterable[MenuItem]) -> None:
+    def open(self, title: str, items: Iterable[MenuItem], footer: str = "") -> None:
         self.title = title
+        self.footer = footer
         self.items = list(items)
         self.index = 0
 
@@ -44,4 +46,4 @@ class MenuModel:
             # The first item of each section carries the section header.
             items.append({"label": item.label, "header": item.section if item.section != previous else ""})
             previous = item.section
-        return {"title": self.title, "items": items, "index": self.index}
+        return {"title": self.title, "footer": self.footer, "items": items, "index": self.index}

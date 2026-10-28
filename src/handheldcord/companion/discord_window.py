@@ -26,6 +26,10 @@ class DiscordWindows:
     def foreground(self) -> int:
         return win32.foreground_window()
 
+    def running(self) -> bool:
+        """Whether a Discord process exists, even before (or without) a window."""
+        return not DISCORD_EXES.isdisjoint(win32.process_names())
+
     def is_discord(self, hwnd: int) -> bool:
         """Checked every input tick, so the process lookup is cached per window."""
         if not hwnd:

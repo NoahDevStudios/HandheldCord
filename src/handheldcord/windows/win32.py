@@ -98,6 +98,8 @@ SW_SHOW = 5
 SW_MINIMIZE = 6
 SW_RESTORE = 9
 PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+TH32CS_SNAPPROCESS = 0x00000002
+INVALID_HANDLE_VALUE = wintypes.HANDLE(-1).value
 GWL_EXSTYLE = -20
 WS_EX_TOOLWINDOW = 0x00000080
 WS_EX_NOACTIVATE = 0x08000000
@@ -114,6 +116,21 @@ class WINDOWPLACEMENT(ctypes.Structure):
         ("ptMinPosition", wintypes.POINT),
         ("ptMaxPosition", wintypes.POINT),
         ("rcNormalPosition", wintypes.RECT),
+    ]
+
+
+class PROCESSENTRY32W(ctypes.Structure):
+    _fields_ = [
+        ("dwSize", wintypes.DWORD),
+        ("cntUsage", wintypes.DWORD),
+        ("th32ProcessID", wintypes.DWORD),
+        ("th32DefaultHeapID", ULONG_PTR),
+        ("th32ModuleID", wintypes.DWORD),
+        ("cntThreads", wintypes.DWORD),
+        ("th32ParentProcessID", wintypes.DWORD),
+        ("pcPriClassBase", wintypes.LONG),
+        ("dwFlags", wintypes.DWORD),
+        ("szExeFile", wintypes.WCHAR * 260),
     ]
 
 
@@ -143,6 +160,11 @@ kernel32.QueryFullProcessImageNameW.argtypes = [
     wintypes.HANDLE, wintypes.DWORD, wintypes.LPWSTR, ctypes.POINTER(wintypes.DWORD),
 ]
 kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
+kernel32.CreateToolhelp32Snapshot.argtypes = [wintypes.DWORD, wintypes.DWORD]
+kernel32.CreateToolhelp32Snapshot.restype = wintypes.HANDLE
+for _name in ("Process32FirstW", "Process32NextW"):
+    getattr(kernel32, _name).argtypes = [wintypes.HANDLE, ctypes.POINTER(PROCESSENTRY32W)]
+    getattr(kernel32, _name).restype = wintypes.BOOL
 kernel32.GetCurrentThreadId.restype = wintypes.DWORD
 kernel32.CreateMutexW.argtypes = [wintypes.LPVOID, wintypes.BOOL, wintypes.LPCWSTR]
 kernel32.CreateMutexW.restype = wintypes.HANDLE
@@ -174,6 +196,24 @@ def process_path(pid: int) -> str:
         return ""
     finally:
         kernel32.CloseHandle(handle)
+
+
+def process_names() -> set[str]:
+    """Lower-case executable names of all running processes, without opening any of them."""
+    snapshot = kernel32.CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0)
+    if not snapshot or snapshot == INVALID_HANDLE_VALUE:
+        return set()
+    try:
+        entry = PROCESSENTRY32W()
+        entry.dwSize = ctypes.sizeof(entry)
+        names = set()
+        found = kernel32.Process32FirstW(snapshot, ctypes.byref(entry))
+        while found:
+            names.add(entry.szExeFile.lower())
+            found = kernel32.Process32NextW(snapshot, ctypes.byref(entry))
+        return names
+    finally:
+        kernel32.CloseHandle(snapshot)
 
 
 def window_title(hwnd: int) -> str:

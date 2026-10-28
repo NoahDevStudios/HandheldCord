@@ -133,14 +133,14 @@ Window {
             font.pixelSize: 16
         }
 
-        // Key picker (◀ ▶) on steps that choose a handheld key.
+        // Picker (◀ ▶) on steps that choose a handheld key or a setting.
         Row {
-            visible: !!win.w.key
+            visible: !!win.w.picker
             spacing: 10
 
             Text {
                 anchors.verticalCenter: parent.verticalCenter
-                text: win.w.key ? win.w.key.caption : ""
+                text: win.w.picker ? win.w.picker.caption : ""
                 color: "#cdd5df"
                 font.pixelSize: 16
             }
@@ -157,7 +157,7 @@ Window {
                 Text {
                     id: keyLabel
                     anchors.centerIn: parent
-                    text: win.w.key ? win.w.key.label : ""
+                    text: win.w.picker ? win.w.picker.label : ""
                     color: "#ffffff"
                     font.pixelSize: 20
                     font.bold: true

@@ -1,5 +1,6 @@
 import json
 
+from handheldcord import SUPPORT_URL, __version__
 from handheldcord.companion.actions import SIMPLE_ACTIONS
 
 
@@ -147,6 +148,19 @@ def test_favorites_go_through_the_quick_switcher(make_harness):
     assert h.keys.calls == [("tap", "Ctrl+K"), ("type", "general"), ("tap", "Enter")]
 
 
+def test_quick_menu_links_the_support_discord(harness):
+    harness.discord.in_front = True
+    harness.tap("MENU")
+    assert harness.ui.menu["footer"] == f"HandheldCord {__version__} · by NoahDev Studios"
+    labels = [item["label"] for item in harness.ui.menu["items"]]
+    for _ in range(labels.index("Support & bug reports (Discord)")):
+        harness.tap("DPAD_DOWN")
+    harness.tap("A")
+    assert harness.ui.urls == [SUPPORT_URL]
+    assert harness.ui.menu is None
+    assert harness.keys.calls == []
+
+
 def go_to_step(harness, step_id):
     harness.router.open_wizard()
     while harness.router.wizard.step.id != step_id:
@@ -180,10 +194,33 @@ def test_key_picker_skips_keys_already_in_use(harness):
     go_to_step(harness, "mute")
     harness.tap("DPAD_RIGHT")  # F7 is push-to-talk, so the next free key is F8
     assert harness.cfg.handheld_keys["mute"] == "F8"
-    assert harness.ui.wizard["key"]["label"] == "F8"
+    assert harness.ui.wizard["picker"]["label"] == "F8"
     assert json.loads(harness.cfg.path.read_text("utf-8"))["handheld_keys"]["mute"] == "F8"
     harness.tap("DPAD_LEFT")
     assert harness.cfg.handheld_keys["mute"] == "F6"
+
+
+def test_autostart_is_chosen_in_the_assistant(harness):
+    changes = []
+    harness.router.on_autostart_changed = lambda: changes.append(harness.cfg.autostart)
+    go_to_step(harness, "autostart")
+    assert harness.ui.wizard["picker"] == {"caption": "Autostart", "label": "Off"}
+    harness.tap("DPAD_RIGHT")
+    assert harness.ui.wizard["picker"]["label"] == "With Discord"
+    harness.tap("DPAD_RIGHT")
+    harness.tap("DPAD_RIGHT")  # wraps around to Off
+    assert changes == ["discord", "windows", "off"]
+    harness.tap("DPAD_LEFT")
+    assert json.loads(harness.cfg.path.read_text("utf-8"))["autostart"] == "windows"
+
+
+def test_a_step_added_by_an_update_is_shown_once(make_harness):
+    h = make_harness(setup_done=True, setup_step="autostart")
+    h.router.open_wizard(h.cfg.setup_step)
+    assert h.ui.wizard["title"] == "Start automatically"
+    h.tap("MENU")  # closes the assistant
+    assert h.ui.wizard is None
+    assert "setup_step" not in json.loads(h.cfg.path.read_text("utf-8"))
 
 
 def test_changing_the_overlay_key_registers_it_again(harness):

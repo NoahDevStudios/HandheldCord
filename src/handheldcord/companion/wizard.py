@@ -15,6 +15,7 @@ class Step:
     primary: str | None = None    # Ⓐ; None means "next step"
     secondary: str | None = None  # Ⓧ
     key: str | None = None        # handheld key chosen with ◀ ▶ on this step
+    option: str | None = None     # setting chosen with ◀ ▶ instead of a key
     record: str | None = None     # key that Ⓐ sends to Discord's "Record Keybind" field
 
 
@@ -28,6 +29,7 @@ STEPS = (
     Step("test", primary="test.mute"),
     Step("buttons"),
     Step("conflicts"),
+    Step("autostart", option="autostart"),
     Step("done", primary="close"),
 )
 
@@ -45,6 +47,11 @@ class WizardModel:
     @property
     def is_last(self) -> bool:
         return self.index == len(STEPS) - 1
+
+    def start(self, step_id: str = "") -> None:
+        """Open on the given step, or on the first one."""
+        self.index = next((i for i, step in enumerate(STEPS) if step.id == step_id), 0)
+        self.collapsed = False
 
     def next(self) -> bool:
         if self.is_last:
@@ -65,10 +72,18 @@ class WizardModel:
         """Dock in the next corner, so whatever Discord shows behind it can be read."""
         self.position = (self.position + 1) % len(POSITIONS)
 
-    def snapshot(self, t: Callable[..., str], keys: dict[str, str], **params: str) -> dict:
+    def snapshot(self, t: Callable[..., str], keys: dict[str, str], options: dict[str, str], **params: str) -> dict:
         step = self.step
         params = {**keys, **params}
-        key = keys.get(step.key, "") if step.key else ""
+        if step.key:
+            picker = {"caption": t("wizard.key"), "label": keys.get(step.key, "") or "–"}
+        elif step.option:
+            picker = {
+                "caption": t(f"wizard.{step.option}.caption"),
+                "label": t(f"wizard.{step.option}.{options[step.option]}"),
+            }
+        else:
+            picker = None
         if step.primary == "record":
             primary = t("wizard.record", key=keys.get(step.record or "", ""))
         elif step.primary:
@@ -87,7 +102,7 @@ class WizardModel:
             "title": t(f"wizard.{step.id}.title", **params),
             "body": t(f"wizard.{step.id}.body", **params),
             "buttons": buttons,
-            "key": {"caption": t("wizard.key"), "label": key or "–"} if step.key else None,
+            "picker": picker,
             "controls": [
                 {"id": "collapse", "glyph": "Y", "label": t("wizard.collapse")},
                 {"id": "move", "glyph": "VIEW", "label": t("wizard.move")},

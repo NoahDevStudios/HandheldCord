@@ -4,8 +4,9 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "handheldcord"
-version = "0.2.0"
+version = "0.3.0"
 description = "Controller-first companion for the official Discord app on Windows handhelds"
+authors = [{ name = "NoahDev Studios" }]
 readme = "README.md"
 license = "GPL-3.0-or-later"
 license-files = ["LICENSE"]
@@ -16,6 +17,10 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Topic :: Communications :: Chat",
 ]
+
+[project.urls]
+Homepage = "https://github.com/NoahDevStudios/HandheldCord"
+Support = "https://discord.gg/7mNGV3PtZ4"
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]

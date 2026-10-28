@@ -5,6 +5,8 @@ import logging
 import time
 from typing import Callable, Protocol
 
+from .. import SUPPORT_URL, __author__, __version__
+from ..config import AUTOSTART_MODES
 from ..input.gestures import ContextBindings, Fired, GestureEngine
 from ..input.profile import load_profile
 from . import hints
@@ -46,6 +48,7 @@ class Ui(Protocol):
     def menu_changed(self, snapshot: dict | None) -> None: ...
     def confirm_changed(self, snapshot: dict | None) -> None: ...
     def wizard_changed(self, snapshot: dict | None) -> None: ...
+    def open_url(self, url: str) -> None: ...
 
 
 class Router:
@@ -73,6 +76,8 @@ class Router:
         self.clock = clock
         # Called after the setup assistant changed the overlay key, so it can be registered again.
         self.on_keys_changed: Callable[[], None] | None = None
+        # Called after the setup assistant changed the autostart mode, so Windows' entry can follow.
+        self.on_autostart_changed: Callable[[], None] | None = None
         self.stack: list[str] = []
         self.context = ""
         self.menu = MenuModel()
@@ -132,8 +137,11 @@ class Router:
             return
         self._run(Fired("overlay.toggle"))
 
-    def open_wizard(self) -> None:
-        self._run(Fired("wizard.open"))
+    def open_wizard(self, step: str = "") -> None:
+        self._wizard_open(step)
+
+    def open_support(self) -> None:
+        self._run(Fired("app.support"))
 
     def osk_tap(self, row: int, col: int) -> None:
         if "osk" in self.stack and self.osk.select(row, col):
@@ -218,6 +226,7 @@ class Router:
     def _build_handlers(self) -> dict[str, Callable[[], None]]:
         return {
             "overlay.toggle": self._toggle_overlay,
+            "app.support": self._open_support,
             "voice.mute": self._mute,
             "voice.ptt": lambda: self._tap(self.cfg.handheld_keys["ptt"]),
             "voice.leave": lambda: self._ask("confirm.leave", "voice.disconnect"),
@@ -257,8 +266,8 @@ class Router:
             "wizard.next": lambda: self._wizard_move(self.wizard.next),
             "wizard.prev": lambda: self._wizard_move(self.wizard.prev),
             "wizard.back": self._wizard_back,
-            "wizard.key_prev": lambda: self._wizard_key(-1),
-            "wizard.key_next": lambda: self._wizard_key(1),
+            "wizard.key_prev": lambda: self._wizard_pick(-1),
+            "wizard.key_next": lambda: self._wizard_pick(1),
             "wizard.collapse": lambda: self._wizard_change(self.wizard.toggle_collapsed),
             "wizard.move": lambda: self._wizard_change(self.wizard.move),
         }
@@ -281,6 +290,11 @@ class Router:
             self.ui.toast(self.t("toast.not_found"))
         elif result == "failed":
             self.ui.toast(self.t("toast.focus_failed"))
+
+    def _open_support(self) -> None:
+        """The support Discord's invite opens in the browser, which offers to continue in the app."""
+        self.ui.open_url(SUPPORT_URL)
+        self.ui.toast(self.t("toast.support"))
 
     def _probe_launch(self, now: float) -> None:
         """After starting Discord, bring its window to the front once it exists."""
@@ -401,11 +415,13 @@ class Router:
             MenuItem(t("menu.leave"), "voice.leave", voice),
             MenuItem(t("menu.to_game"), "overlay.toggle", app),
             MenuItem(t("menu.setup"), "wizard.open", app),
+            MenuItem(t("menu.support"), "app.support", app),
         ]
         return items
 
     def _menu_open(self) -> None:
-        self.menu.open(self.t("menu.title"), self._menu_items())
+        footer = self.t("app.credit", version=__version__, author=__author__)
+        self.menu.open(self.t("menu.title"), self._menu_items(), footer)
         self._push("menu")
         self.ui.menu_changed(self.menu.snapshot())
 
@@ -431,16 +447,15 @@ class Router:
         keys["leave"] = self.cfg.discord_keybinds["disconnect"]
         return keys
 
-    def _wizard_open(self) -> None:
-        self.wizard.index = 0
-        self.wizard.collapsed = False
+    def _wizard_open(self, step: str = "") -> None:
+        self.wizard.start(step)
         self._push("wizard")
         self._wizard_publish()
 
     def _wizard_close(self) -> None:
         self._pop("wizard")
         self.ui.wizard_changed(None)
-        if not self.cfg.setup_done:
+        if not self.cfg.setup_done or self.cfg.setup_step:
             self.cfg.mark_setup_done()
 
     def _wizard_move(self, move: Callable[[], bool]) -> None:
@@ -498,11 +513,22 @@ class Router:
                 self.keys.tap(combo)
             self.ui.toast(self.t("toast.sent", key=combo))
 
-    def _wizard_key(self, delta: int) -> None:
-        """◀ ▶ cycle the step's handheld key through F1-F12, skipping keys used for something else."""
-        name = self.wizard.step.key
-        if not name:
+    def _wizard_pick(self, delta: int) -> None:
+        """◀ ▶ change the step's handheld key or setting."""
+        step = self.wizard.step
+        if step.key:
+            self._pick_key(step.key, delta)
+        elif step.option == "autostart":
+            modes = AUTOSTART_MODES
+            self.cfg.set_autostart(modes[(modes.index(self.cfg.autostart) + delta) % len(modes)])
+            if self.on_autostart_changed:
+                self.on_autostart_changed()
+        else:
             return
+        self._wizard_publish()
+
+    def _pick_key(self, name: str, delta: int) -> None:
+        """Cycle a handheld key through F1-F12, skipping keys used for something else."""
         keys = self.cfg.handheld_keys
         taken = {value for other, value in keys.items() if other != name}
         choices = [key for key in KEY_CHOICES if key not in taken]
@@ -514,8 +540,8 @@ class Router:
         self.cfg.set_handheld_key(name, new)
         if name == "overlay" and self.on_keys_changed:
             self.on_keys_changed()
-        self._wizard_publish()
 
     def _wizard_publish(self) -> None:
         status = self.t("wizard.status.found" if self.discord.find() else "wizard.status.missing")
-        self.ui.wizard_changed(self.wizard.snapshot(self.t, self._wizard_keys(), status=status))
+        options = {"autostart": self.cfg.autostart}
+        self.ui.wizard_changed(self.wizard.snapshot(self.t, self._wizard_keys(), options, status=status))
