@@ -1,9 +1,22 @@
+<div align="center">
+
 # HandheldCord
 
 Use Discord on Windows handhelds (ROG Ally, Legion Go, MSI Claw, …) with nothing but the controller.
 
+[![Discord](https://img.shields.io/badge/Discord-join%20the%20community-5865F2?logo=discord&logoColor=white)](https://discord.gg/7mNGV3PtZ4)
+[![Download](https://img.shields.io/github/v/release/NoahDevStudios/HandheldCord?include_prereleases&label=download&color=14b8a6)](https://github.com/NoahDevStudios/HandheldCord/releases)
+[![CI](https://github.com/NoahDevStudios/HandheldCord/actions/workflows/ci.yml/badge.svg)](https://github.com/NoahDevStudios/HandheldCord/actions/workflows/ci.yml)
+[![License](https://img.shields.io/github/license/NoahDevStudios/HandheldCord?color=blue)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-informational)](#requirements)
+
+<img src="docs/handheldcord-demo.gif" alt="HandheldCord demo: from a game to Discord and back, browsing channels, joining a voice channel, typing with the controller keyboard and leaving a call" width="760">
+
+<sub>Animated demo: HandheldCord's real overlays on an illustrated chat window.</sub>
+
+</div>
+
 > **Status:** early preview (v0.3, *companion mode*). Not affiliated with or endorsed by Discord Inc.
-> Questions and bug reports: [HandheldCord Discord](https://discord.gg/7mNGV3PtZ4)
 
 ## What it does
 
