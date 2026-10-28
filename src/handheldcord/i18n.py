@@ -332,11 +332,9 @@ STRINGS: dict[str, dict[str, str]] = {
 }
 
 
-def resolve_language(setting: str, system_locale: str) -> str:
-    """"auto" follows the system locale; everything except German falls back to English."""
-    if setting in STRINGS:
-        return setting
-    return "de" if system_locale.lower().startswith("de") else "en"
+def resolve_language(setting: str) -> str:
+    """HandheldCord is international: English, unless the config explicitly asks for German."""
+    return setting if setting in STRINGS else "en"
 
 
 class Translator:

@@ -46,6 +46,7 @@ def test_first_start_writes_the_defaults(tmp_path):
     assert cfg.handheld_keys == {"overlay": "F10", "mute": "F6", "ptt": "F7"}
     assert cfg.discord_shortcuts["settings"] == "Ctrl+,"
     assert cfg.autostart == "off"
+    assert cfg.language == "en"
     assert not cfg.setup_done
 
 
@@ -94,6 +95,14 @@ def test_finished_setup_from_version_2_shows_only_the_autostart_step(tmp_path):
     assert config.load(path).setup_step == ""
 
 
+def test_automatic_language_becomes_english(tmp_path):
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps({"config_version": 3, "language": "auto"}), "utf-8")
+    assert config.load(path).language == "en"
+    path.write_text(json.dumps({"config_version": 3, "language": "de"}), "utf-8")
+    assert config.load(path).language == "de"  # an explicit choice stays
+
+
 def test_unknown_autostart_mode_means_off(tmp_path):
     path = tmp_path / "config.json"
     path.write_text(json.dumps({"config_version": 3, "autostart": "always"}), "utf-8")
@@ -139,7 +148,8 @@ def test_wizard_texts_format_in_both_languages():
             assert "{" not in t(f"wizard.{step.id}.body", **params)
 
 
-def test_language_resolution():
-    assert resolve_language("auto", "de_AT") == "de"
-    assert resolve_language("auto", "fr_FR") == "en"
-    assert resolve_language("en", "de_DE") == "en"
+def test_interface_is_english_unless_german_is_chosen():
+    assert resolve_language("en") == "en"
+    assert resolve_language("auto") == "en"
+    assert resolve_language("fr") == "en"
+    assert resolve_language("de") == "de"

@@ -120,7 +120,8 @@ The keyboard never takes the focus, so the text lands in whatever Discord field 
 | `discord_shortcuts` | Discord's in-app shortcuts: `switcher`, `emoji`, `settings` |
 | `discord_keybinds` | Keybinds that only HandheldCord sends: `disconnect` (leave the call) |
 | `autostart` | `off`, `discord` (start with Windows, wait until Discord runs) or `windows` |
-| `language` / `osk_layout` | `auto`, `en` or `de` |
+| `language` | `en` (default) or `de` for a German interface |
+| `osk_layout` | On-screen keyboard: `auto` (follows `language`), `en` (QWERTY) or `de` (QWERTZ with umlauts) |
 | `maximize_discord` | Maximize Discord when bringing it to the front |
 | `show_hints` | Show the button hint bar |
 | `timing` | `repeat_delay_ms`, `repeat_interval_ms`, `long_press_ms`, `chord_hold_ms` |

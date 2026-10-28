@@ -15,14 +15,16 @@ log = logging.getLogger(__name__)
 
 APP_DIR = Path(os.environ.get("APPDATA") or Path.home()) / "HandheldCord"
 DEFAULT_PATH = APP_DIR / "config.json"
-CONFIG_VERSION = 3
+CONFIG_VERSION = 4
 MIN_REPEAT_INTERVAL_S = 0.02
 # "discord" starts with Windows too, but waits in the tray until Discord runs.
 AUTOSTART_MODES = ("off", "discord", "windows")
 
 DEFAULTS: dict = {
     "config_version": CONFIG_VERSION,
-    "language": "auto",
+    # HandheldCord is international, so its interface is English; "de" switches it to German.
+    "language": "en",
+    # "auto" follows the language; "en" is QWERTY, "de" QWERTZ with umlauts.
     "osk_layout": "auto",
     "maximize_discord": True,
     "show_hints": True,
@@ -56,7 +58,7 @@ class Config:
 
     @property
     def language(self) -> str:
-        return str(self.data.get("language") or "auto")
+        return str(self.data.get("language") or "en")
 
     @property
     def osk_layout(self) -> str:
@@ -218,6 +220,9 @@ def _migrate(user: dict) -> bool:
     if version < 3 and user.get("setup_done"):
         # Autostart came with version 3: show that step once instead of the whole assistant.
         user["setup_step"] = "autostart"
+    if version < 4 and user.get("language") == "auto":
+        # "auto" used to follow the Windows language; the interface is English for everyone now.
+        user["language"] = "en"
     user["config_version"] = CONFIG_VERSION
     return True
 

@@ -10,7 +10,7 @@ import sys
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
-from PySide6.QtCore import QLocale, Qt, QTimer, QUrl
+from PySide6.QtCore import Qt, QTimer, QUrl
 from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
@@ -50,7 +50,7 @@ def main(argv: list[str] | None = None) -> int:
 
     app = QApplication(sys.argv[:1])
     app.setQuitOnLastWindowClosed(False)
-    t = Translator(resolve_language(cfg.language, QLocale.system().name()))
+    t = Translator(resolve_language(cfg.language))
 
     bridge = Bridge(show_hints=cfg.show_hints)
     engine = QQmlApplicationEngine()
