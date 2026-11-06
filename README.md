@@ -9,6 +9,7 @@ Use Discord on Windows handhelds (ROG Ally, Legion Go, MSI Claw, …) with nothi
 [![CI](https://github.com/NoahDevStudios/HandheldCord/actions/workflows/ci.yml/badge.svg)](https://github.com/NoahDevStudios/HandheldCord/actions/workflows/ci.yml)
 [![License](https://img.shields.io/github/license/NoahDevStudios/HandheldCord?color=blue)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-informational)](#requirements)
+[![Linux](https://img.shields.io/badge/Linux-Steam%20Input%20layout-FCC624?logo=linux&logoColor=black)](docs/linux.md)
 
 <img src="docs/handheldcord-demo.gif" alt="HandheldCord demo: from a game to Discord and back, browsing channels, joining a voice channel, typing with the controller keyboard and leaving a call" width="760">
 
@@ -45,6 +46,10 @@ It only presses keyboard shortcuts for you – the same thing a Steam Input prof
 2. Extract it, for example to `Documents\HandheldCord`, and start `HandheldCord.exe`.
    The build is not signed yet, so Windows SmartScreen may warn: choose **More info → Run anyway**.
 No Python needed. To update, quit HandheldCord from the tray icon and replace the folder with the new release; your settings live in `%APPDATA%\HandheldCord`.
+
+## Linux (Steam Deck, SteamOS, Linux PCs)
+
+The app itself is Windows-only, but a Steam Input layout gives the Discord app the same controls on Linux handhelds and PCs: see [HandheldCord on Linux](docs/linux.md).
 
 ## First start
 
