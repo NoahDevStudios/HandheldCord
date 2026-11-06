@@ -5,7 +5,7 @@ import ctypes
 import logging
 from ctypes import wintypes
 
-from .keys import EXTENDED_KEYS, VK_MENU
+from ..keys import EXTENDED_KEYS, VK_MENU
 
 log = logging.getLogger(__name__)
 

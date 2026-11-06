@@ -8,7 +8,7 @@ from ctypes import wintypes
 from typing import Callable
 
 from . import win32
-from .keys import hotkey_modifiers, parse_combo
+from ..keys import hotkey_modifiers, parse_combo
 
 log = logging.getLogger(__name__)
 

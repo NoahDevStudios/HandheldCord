@@ -1,4 +1,7 @@
-"""Key combos such as "Ctrl+Alt+Up", shared by SendInput and RegisterHotKey."""
+"""Key combos such as "Ctrl+Alt+Up", shared by every platform's key sender and hotkeys.
+
+Keys are identified by their Windows virtual-key codes; the Linux backend maps them to X keysyms.
+"""
 from __future__ import annotations
 
 from dataclasses import dataclass

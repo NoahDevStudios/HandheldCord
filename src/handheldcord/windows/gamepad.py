@@ -6,7 +6,7 @@ import logging
 import time
 from ctypes import wintypes
 
-from .buttons import PadState
+from ..input.buttons import PadState
 
 log = logging.getLogger(__name__)
 

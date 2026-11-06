@@ -1,12 +1,11 @@
 """Turns the QML windows into overlays that never take the focus away from Discord."""
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QWindow
-
-from ..windows import win32
 
 QML_DIR = Path(__file__).with_name("qml")
 # (QML file, click-through)
@@ -30,6 +29,10 @@ def prepare_overlay(window: QWindow, click_through: bool) -> None:
     if click_through:
         flags |= Qt.WindowType.WindowTransparentForInput
     window.setFlags(flags)
+    if sys.platform != "win32":
+        return  # on X11 the flags are enough: Qt marks the windows as never taking the input focus
+    from ..windows import win32
+
     # Qt checks this property when showing a window and then uses SW_SHOWNOACTIVATE.
     window.setProperty("_q_showWithoutActivating", True)
     hwnd = int(window.winId())

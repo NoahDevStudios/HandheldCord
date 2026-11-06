@@ -7,7 +7,7 @@ import subprocess
 import time
 from pathlib import Path
 
-from ..windows import win32
+from . import win32
 
 log = logging.getLogger(__name__)
 

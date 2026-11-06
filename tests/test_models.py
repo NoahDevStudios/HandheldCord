@@ -143,9 +143,10 @@ def test_every_referenced_string_exists():
 def test_wizard_texts_format_in_both_languages():
     params = {"overlay": "F10", "mute": "F6", "ptt": "F7", "leave": "Ctrl+Alt+Shift+F11", "status": "ok"}
     for lang in STRINGS:
-        t = Translator(lang)
-        for step in STEPS:
-            assert "{" not in t(f"wizard.{step.id}.body", **params)
+        for platform in ("windows", "linux"):
+            t = Translator(lang, platform)
+            for step in STEPS:
+                assert "{" not in t(f"wizard.{step.id}.body", **params)
 
 
 def test_interface_is_english_unless_german_is_chosen():

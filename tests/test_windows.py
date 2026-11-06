@@ -1,9 +1,14 @@
+"""Windows autostart (Run key) and process list; Linux has its own in test_linux.py."""
 import subprocess
 import sys
 from contextlib import contextmanager
 from pathlib import Path
 
-from handheldcord.windows import autostart, win32
+import pytest
+
+pytest.importorskip("winreg")
+
+from handheldcord.windows import autostart, win32  # noqa: E402
 
 
 class FakeRegistry:

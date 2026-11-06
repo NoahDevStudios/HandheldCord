@@ -1,19 +1,23 @@
-"""User configuration, stored as JSON in %APPDATA%\\HandheldCord."""
+"""User configuration, stored as JSON in %APPDATA%\\HandheldCord or ~/.config/HandheldCord."""
 from __future__ import annotations
 
 import copy
 import json
 import logging
 import os
+import sys
 from pathlib import Path
 
 from .companion.actions import DEFAULT_BINDINGS
 from .input.gestures import Timing
-from .windows.keys import canonical
+from .keys import canonical
 
 log = logging.getLogger(__name__)
 
-APP_DIR = Path(os.environ.get("APPDATA") or Path.home()) / "HandheldCord"
+if sys.platform == "win32":
+    APP_DIR = Path(os.environ.get("APPDATA") or Path.home()) / "HandheldCord"
+else:
+    APP_DIR = Path(os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config") / "HandheldCord"
 DEFAULT_PATH = APP_DIR / "config.json"
 CONFIG_VERSION = 4
 MIN_REPEAT_INTERVAL_S = 0.02

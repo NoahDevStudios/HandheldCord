@@ -11,9 +11,10 @@ readme = "README.md"
 license = "GPL-3.0-or-later"
 license-files = ["LICENSE"]
 requires-python = ">=3.11"
-dependencies = ["PySide6-Essentials>=6.8"]
+dependencies = ["PySide6-Essentials>=6.8", "python-xlib>=0.33; sys_platform == 'linux'"]
 classifiers = [
     "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3",
     "Topic :: Communications :: Chat",
 ]

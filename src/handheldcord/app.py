@@ -1,33 +1,31 @@
-"""Entry point: wires controller input, the router, Win32 and the QML overlays together."""
+"""Entry point: wires controller input, the router, the OS backends and the QML overlays together."""
 from __future__ import annotations
 
 import argparse
 import json
 import logging
-import os
-import subprocess
 import sys
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
-from PySide6.QtCore import Qt, QTimer, QUrl
-from PySide6.QtGui import QIcon, QPixmap
-from PySide6.QtQml import QQmlApplicationEngine
-from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
+from . import system  # first: it picks Qt's platform plugin on Linux
 
-from . import __author__, __version__, config
-from .companion.actions import DEFAULT_BINDINGS
-from .companion.discord_window import DiscordWindows
-from .companion.router import Router
-from .i18n import Translator, resolve_language
-from .input.normalize import Normalizer
-from .input.xinput import XInputBackend
-from .ui.bridge import Bridge
-from .ui.icon import render_icon
-from .ui.overlay import OVERLAYS, QML_DIR, prepare_overlay
-from .windows import autostart, win32
-from .windows.hotkeys import GlobalHotkeys
-from .windows.sender import KeySender
+from PySide6.QtCore import Qt, QTimer, QUrl  # noqa: E402
+from PySide6.QtGui import QIcon, QPixmap  # noqa: E402
+from PySide6.QtQml import QQmlApplicationEngine  # noqa: E402
+from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon  # noqa: E402
+
+from . import __author__, __version__, config  # noqa: E402
+from .companion.actions import DEFAULT_BINDINGS  # noqa: E402
+from .companion.router import Router  # noqa: E402
+from .i18n import Translator, resolve_language  # noqa: E402
+from .input.normalize import Normalizer  # noqa: E402
+from .system import (  # noqa: E402
+    DiscordWindows, GamepadBackend, GlobalHotkeys, KeySender, acquire_single_instance, autostart, open_file,
+)
+from .ui.bridge import Bridge  # noqa: E402
+from .ui.icon import render_icon  # noqa: E402
+from .ui.overlay import OVERLAYS, QML_DIR, prepare_overlay  # noqa: E402
 
 log = logging.getLogger("handheldcord")
 
@@ -41,7 +39,7 @@ def main(argv: list[str] | None = None) -> int:
     config_path = Path(args.config) if args.config else config.DEFAULT_PATH
     _setup_logging(config_path.parent, args.debug)
     log.info("HandheldCord %s starting (companion mode)", __version__)
-    if not win32.acquire_single_instance():
+    if not acquire_single_instance():
         log.info("HandheldCord is already running")
         return 0
 
@@ -73,7 +71,7 @@ def main(argv: list[str] | None = None) -> int:
     if cfg.error:
         bridge.toast(t("toast.config_error"))
 
-    backend = XInputBackend()
+    backend = GamepadBackend()
     normalizer = Normalizer()
     timer = QTimer()
     timer.setTimerType(Qt.TimerType.PreciseTimer)
@@ -168,7 +166,7 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
         prog="handheldcord",
         description="Controller-first companion for the official Discord app.",
     )
-    parser.add_argument("--config", help="path to config.json (default: %%APPDATA%%\\HandheldCord\\config.json)")
+    parser.add_argument("--config", help=f"path to config.json (default: {str(config.DEFAULT_PATH).replace('%', '%%')})")
     parser.add_argument("--dry-run", action="store_true", help="log key presses and window switches instead of doing them")
     parser.add_argument("--debug", action="store_true", help="verbose logging")
     parser.add_argument("--debug-input", action="store_true", help="log every controller button change")
@@ -204,13 +202,6 @@ def _write_reference_bindings(directory: Path) -> None:
         log.warning("Could not write default-bindings.json", exc_info=True)
 
 
-def _open_file(path: Path) -> None:
-    try:
-        os.startfile(path)
-    except OSError:  # no program associated with .json
-        subprocess.Popen(["notepad.exe", str(path)])
-
-
 def _create_tray(app, t, router, config_path: Path, reload_config, open_setup) -> tuple[QSystemTrayIcon, QMenu]:
     tray = QSystemTrayIcon(_app_icon(), app)
     tray.setToolTip(t("tray.tooltip"))
@@ -219,7 +210,7 @@ def _create_tray(app, t, router, config_path: Path, reload_config, open_setup) -
     menu.addSeparator()
     entries = (
         (t("tray.setup"), open_setup),
-        (t("tray.config"), lambda: _open_file(config_path)),
+        (t("tray.config"), lambda: open_file(config_path)),
         (t("tray.reload"), reload_config),
         (t("tray.support"), router.open_support),
         None,

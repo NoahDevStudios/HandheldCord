@@ -35,7 +35,8 @@ def make_icon(path: Path) -> Path:
 
 
 def main() -> int:
-    icon = make_icon(BUILD / "handheldcord.ico")
+    windows = sys.platform == "win32"
+    icon = make_icon(BUILD / ("handheldcord.ico" if windows else "handheldcord.png"))
     subprocess.run(
         [
             sys.executable, "-m", "PyInstaller",
@@ -43,9 +44,11 @@ def main() -> int:
             "--clean",
             "--windowed",
             "--name", "HandheldCord",
-            "--icon", str(icon),
+            *(["--icon", str(icon)] if windows else []),
             "--paths", str(SRC),
             "--add-data", f"{SRC / 'handheldcord' / 'ui' / 'qml'}{os.pathsep}handheldcord/ui/qml",
+            # python-xlib loads its extensions and keysym tables by name
+            *([] if windows else ["--collect-submodules", "Xlib"]),
             "--exclude-module", "tkinter",
             "--distpath", str(DIST),
             "--workpath", str(BUILD / "pyinstaller"),
@@ -56,7 +59,12 @@ def main() -> int:
     )
     app_dir = DIST / "HandheldCord"
     shutil.copy2(ROOT / "LICENSE", app_dir / "LICENSE.txt")
-    archive = shutil.make_archive(str(DIST / f"HandheldCord-{__version__}-win64"), "zip", root_dir=DIST, base_dir="HandheldCord")
+    if windows:
+        archive = shutil.make_archive(str(DIST / f"HandheldCord-{__version__}-win64"), "zip", DIST, "HandheldCord")
+    else:
+        shutil.copy2(icon, app_dir / "handheldcord.png")
+        # A tarball keeps the executable bit, so HandheldCord starts with a double-click after unpacking.
+        archive = shutil.make_archive(str(DIST / f"HandheldCord-{__version__}-linux-x86_64"), "gztar", DIST, "HandheldCord")
     print(f"Built {archive}")
     return 0
 

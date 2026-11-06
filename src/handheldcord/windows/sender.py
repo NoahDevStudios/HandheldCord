@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 
 from . import win32
-from .keys import VK_RETURN, VK_SHIFT, parse_combo
+from ..keys import VK_RETURN, VK_SHIFT, parse_combo
 
 log = logging.getLogger(__name__)
 

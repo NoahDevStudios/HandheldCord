@@ -1,7 +1,7 @@
 """Actions understood by the companion router, and the default controller layout."""
 from __future__ import annotations
 
-from ..windows.keys import canonical
+from ..keys import canonical
 
 SIMPLE_ACTIONS = frozenset({
     "overlay.toggle", "app.support",

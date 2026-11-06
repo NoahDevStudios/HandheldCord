@@ -1,7 +1,8 @@
+import sys
+
 import pytest
 
-from handheldcord.windows.keys import VK_CONTROL, VK_SHIFT, canonical, hotkey_modifiers, parse_combo
-from handheldcord.windows.sender import utf16_units
+from handheldcord.keys import VK_CONTROL, VK_SHIFT, canonical, hotkey_modifiers, parse_combo
 
 
 def test_modifiers_come_out_in_canonical_order():
@@ -29,5 +30,8 @@ def test_hotkey_modifier_flags():
     assert hotkey_modifiers(parse_combo("Ctrl+Alt+Shift+F12")) == 0x1 | 0x2 | 0x4
 
 
+@pytest.mark.skipif(sys.platform != "win32", reason="SendInput is Windows-only")
 def test_emoji_become_surrogate_pairs():
+    from handheldcord.windows.sender import utf16_units
+
     assert utf16_units("a👍") == [0x61, 0xD83D, 0xDC4D]

@@ -1,5 +1,12 @@
-"""UI strings (English and German) and language selection."""
+"""UI strings (English and German) and language selection.
+
+A key ending in "@linux" replaces the key without it on Linux, for texts that differ there.
+"""
 from __future__ import annotations
+
+import sys
+
+PLATFORM = "linux" if sys.platform.startswith("linux") else "windows"
 
 STRINGS: dict[str, dict[str, str]] = {
     "en": {
@@ -155,6 +162,30 @@ STRINGS: dict[str, dict[str, str]] = {
         "wizard.autostart.off": "Off",
         "wizard.autostart.discord": "With Discord",
         "wizard.autostart.windows": "With Windows",
+        "wizard.buttons.body@linux": (
+            "Now map spare buttons to these keys. On a Steam Deck that's Steam's desktop layout (Steam → "
+            "Settings → Controller → Desktop Layout); on other devices use the tool your system offers:\n\n"
+            "• {overlay} – Discord ⇄ game\n"
+            "• {mute} – mute\n"
+            "• {ptt} – push-to-talk (hold)\n\n"
+            "Mute and push-to-talk reach the game too, so avoid keys your game uses – F5 and F9 are often "
+            "quicksave and quickload."
+        ),
+        "wizard.conflicts.body@linux": (
+            "On the desktop Steam turns your controller into mouse and keyboard. Then Discord receives every "
+            "input twice, and on a Steam Deck HandheldCord can't see the controller at all.\n\n"
+            "In Steam → Settings → Controller → Desktop Layout, choose the template “Gamepad with Mouse "
+            "Trackpad” while you use HandheldCord; the trackpad stays a mouse."
+        ),
+        "wizard.autostart.body@linux": (
+            "Should HandheldCord start by itself? Choose with ◀ ▶:\n\n"
+            "• Off – you start HandheldCord yourself.\n"
+            "• With Discord – starts when you sign in and waits in the tray. It only takes over the controller "
+            "and your Discord button once Discord is running.\n"
+            "• At sign-in – starts when you sign in and is ready right away; your Discord button then "
+            "starts Discord too."
+        ),
+        "wizard.autostart.windows@linux": "At sign-in",
         "wizard.done.title": "All set!",
         "wizard.done.body": (
             "In a game: {overlay} or hold ⧉ + ☰ → Discord. {mute} mutes, {ptt} is push-to-talk.\n"
@@ -320,6 +351,31 @@ STRINGS: dict[str, dict[str, str]] = {
         "wizard.autostart.off": "Aus",
         "wizard.autostart.discord": "Mit Discord",
         "wizard.autostart.windows": "Mit Windows",
+        "wizard.buttons.body@linux": (
+            "Lege jetzt freie Knöpfe auf diese Tasten. Auf dem Steam Deck geht das in Steams Desktop-Layout "
+            "(Steam → Einstellungen → Controller → Desktop-Layout), auf anderen Geräten mit dem Werkzeug "
+            "deines Systems:\n\n"
+            "• {overlay} – Discord ⇄ Spiel\n"
+            "• {mute} – Mute\n"
+            "• {ptt} – Push-to-Talk (halten)\n\n"
+            "Mute und Push-to-Talk kommen auch im Spiel an. Nimm daher keine Tasten, die dein Spiel nutzt – "
+            "F5 und F9 sind oft Schnellspeichern und -laden."
+        ),
+        "wizard.conflicts.body@linux": (
+            "Auf dem Desktop macht Steam deinen Controller zu Maus und Tastatur. Dann kommt in Discord jede "
+            "Eingabe doppelt an, und auf dem Steam Deck sieht HandheldCord den Controller gar nicht.\n\n"
+            "Wähle unter Steam → Einstellungen → Controller → Desktop-Layout die Vorlage „Gamepad with Mouse "
+            "Trackpad“, solange du HandheldCord verwendest; das Trackpad bleibt eine Maus."
+        ),
+        "wizard.autostart.body@linux": (
+            "Soll HandheldCord von selbst starten? Wähle mit ◀ ▶:\n\n"
+            "• Aus – du startest HandheldCord selbst.\n"
+            "• Mit Discord – startet beim Anmelden und wartet im Infobereich. Controller und Discord-Taste "
+            "übernimmt es erst, sobald Discord läuft.\n"
+            "• Beim Anmelden – startet beim Anmelden und ist sofort bereit; deine Discord-Taste startet dann "
+            "auch Discord."
+        ),
+        "wizard.autostart.windows@linux": "Beim Anmelden",
         "wizard.done.title": "Fertig!",
         "wizard.done.body": (
             "Im Spiel: {overlay} oder ⧉ + ☰ halten → Discord. {mute} schaltet stumm, {ptt} ist Push-to-Talk.\n"
@@ -338,9 +394,12 @@ def resolve_language(setting: str) -> str:
 
 
 class Translator:
-    def __init__(self, lang: str) -> None:
+    def __init__(self, lang: str, platform: str = PLATFORM) -> None:
         self.lang = lang if lang in STRINGS else "en"
+        self.platform = platform
 
     def __call__(self, key: str, /, **params: object) -> str:
-        text = STRINGS[self.lang].get(key) or STRINGS["en"].get(key) or key
+        variant = f"{key}@{self.platform}"
+        own, english = STRINGS[self.lang], STRINGS["en"]
+        text = own.get(variant) or own.get(key) or english.get(variant) or english.get(key) or key
         return text.format(**params) if params else text
