@@ -2,14 +2,13 @@
 
 # HandheldCord
 
-Use Discord on Windows handhelds (ROG Ally, Legion Go, MSI Claw, …) with nothing but the controller.
+Use Discord on Windows and Linux handhelds (ROG Ally, Legion Go, MSI Claw, Steam Deck, …) with nothing but the controller.
 
 [![Discord](https://img.shields.io/badge/Discord-join%20the%20community-5865F2?logo=discord&logoColor=white)](https://discord.gg/7mNGV3PtZ4)
 [![Download](https://img.shields.io/github/v/release/NoahDevStudios/HandheldCord?include_prereleases&label=download&color=14b8a6)](https://github.com/NoahDevStudios/HandheldCord/releases)
 [![CI](https://github.com/NoahDevStudios/HandheldCord/actions/workflows/ci.yml/badge.svg)](https://github.com/NoahDevStudios/HandheldCord/actions/workflows/ci.yml)
 [![License](https://img.shields.io/github/license/NoahDevStudios/HandheldCord?color=blue)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-informational)](#requirements)
-[![Linux](https://img.shields.io/badge/Linux-Steam%20Input%20layout-FCC624?logo=linux&logoColor=black)](docs/linux.md)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-informational)](#requirements)
 
 <img src="docs/handheldcord-demo.gif" alt="HandheldCord demo: from a game to Discord and back, browsing channels, joining a voice channel, typing with the controller keyboard and leaving a call" width="760">
 
@@ -17,7 +16,7 @@ Use Discord on Windows handhelds (ROG Ally, Legion Go, MSI Claw, …) with nothi
 
 </div>
 
-> **Status:** early preview (v0.3, *companion mode*). Not affiliated with or endorsed by Discord Inc.
+> **Status:** early preview (v0.4, *companion mode*); the Linux version is brand new and wants testers. Not affiliated with or endorsed by Discord Inc.
 
 ## What it does
 
@@ -37,19 +36,26 @@ It only presses keyboard shortcuts for you – the same thing a Steam Input prof
 
 ## Requirements
 
-- Windows 10 or 11 with an XInput controller (every Windows handheld's built-in controller qualifies)
-- The official Discord desktop app
+- **Windows** 10 or 11 with an XInput controller (every Windows handheld's built-in controller qualifies)
+- **Linux** with a desktop session: KDE Plasma (the Steam Deck's Desktop Mode, Bazzite, Kubuntu, Fedora KDE, …) works best, X11 desktops work too
+- The official Discord desktop app (on Linux the package or the Flatpak)
 
-## Install on your handheld
+## Install
+
+### Windows
 
 1. Open the [Releases page](../../releases) and download `HandheldCord-<version>-win64.zip`.
 2. Extract it, for example to `Documents\HandheldCord`, and start `HandheldCord.exe`.
    The build is not signed yet, so Windows SmartScreen may warn: choose **More info → Run anyway**.
-No Python needed. To update, quit HandheldCord from the tray icon and replace the folder with the new release; your settings live in `%APPDATA%\HandheldCord`.
 
-## Linux (Steam Deck, SteamOS, Linux PCs)
+### Linux
 
-The app itself is Windows-only, but a Steam Input layout gives the Discord app the same controls on Linux handhelds and PCs: see [HandheldCord on Linux](docs/linux.md).
+1. Open the [Releases page](../../releases) and download `HandheldCord-<version>-linux-x86_64.tar.gz`.
+2. Extract it, for example into your home folder, and double-click `HandheldCord` in the new folder.
+
+On the Steam Deck, HandheldCord runs in **Desktop Mode**: Steam's Game Mode doesn't let other apps show overlays or switch windows.
+
+No Python needed. To update, quit HandheldCord from the tray icon and replace the folder with the new release; your settings live in `%APPDATA%\HandheldCord` or `~/.config/HandheldCord`.
 
 ## First start
 
@@ -61,8 +67,8 @@ Finally you choose whether HandheldCord starts by itself:
 | Autostart | What happens |
 |---|---|
 | Off | You start HandheldCord yourself |
-| With Discord | Starts with Windows and waits in the tray; it takes over the controller and your Discord button only once Discord runs |
-| With Windows | Starts with Windows and is ready right away; your Discord button also starts Discord |
+| With Discord | Starts with Windows (on Linux at sign-in) and waits in the tray; it takes over the controller and your Discord button only once Discord runs |
+| With Windows / At sign-in | Starts with Windows or at sign-in and is ready right away; your Discord button also starts Discord |
 
 HandheldCord then lives in the system tray; reopen the assistant from the tray icon or the quick menu.
 
@@ -115,7 +121,7 @@ The keyboard never takes the focus, so the text lands in whatever Discord field 
 
 ## Configuration
 
-`%APPDATA%\HandheldCord\config.json` is created on first start. Edit it via the tray icon → *Open configuration*, then *Reload configuration*.
+`config.json` is created on first start in `%APPDATA%\HandheldCord` (Linux: `~/.config/HandheldCord`). Edit it via the tray icon → *Open configuration*, then *Reload configuration*.
 
 | Key | Meaning |
 |---|---|
@@ -124,7 +130,7 @@ The keyboard never takes the focus, so the text lands in whatever Discord field 
 | `handheld_keys` | Standard keys for your handheld buttons: `overlay` (switch game ⇄ Discord), `mute`, `ptt` – easiest to pick in the setup assistant (`""` turns one off) |
 | `discord_shortcuts` | Discord's in-app shortcuts: `switcher`, `emoji`, `settings` |
 | `discord_keybinds` | Keybinds that only HandheldCord sends: `disconnect` (leave the call) |
-| `autostart` | `off`, `discord` (start with Windows, wait until Discord runs) or `windows` |
+| `autostart` | `off`, `discord` (start with Windows or at sign-in, wait until Discord runs) or `windows` (start with Windows or at sign-in) |
 | `language` | `en` (default) or `de` for a German interface |
 | `osk_layout` | On-screen keyboard: `auto` (follows `language`), `en` (QWERTY) or `de` (QWERTZ with umlauts) |
 | `maximize_discord` | Maximize Discord when bringing it to the front |
@@ -158,6 +164,13 @@ Contexts: `game`, `discord`, `discord_popup`, `osk`, `menu`, `wizard`. A context
 - If Discord runs **as administrator**, Windows blocks the simulated keys – run both at the same privilege level.
 - Discord's shortcuts may change with updates; all of them are configurable.
 
+### On Linux
+
+- **Desktop sessions only.** The Steam Deck's Game Mode doesn't allow overlays or window switching for other apps.
+- On a Steam Deck, Steam's desktop layout must send **gamepad** input (the template *Gamepad with Mouse Trackpad*), otherwise HandheldCord can't see the controller. The setup assistant shows where.
+- On Wayland desktops HandheldCord runs through XWayland like Discord itself. The overlay key (F10) works while an X11 window has the focus – Discord and games running through Proton are X11 windows; holding **View + Menu** always works.
+- If Discord's mute or push-to-talk key doesn't react while a native Wayland app is in front, allow it in KDE's System Settings under **Legacy X11 App Support**.
+
 ## Support
 
 Questions, ideas or bug reports: join the [HandheldCord Discord](https://discord.gg/7mNGV3PtZ4).
@@ -176,12 +189,13 @@ python -m venv .venv
 .venv\Scripts\python -m handheldcord --dry-run --debug --debug-input
 ```
 
-`--dry-run` logs key presses and window switches instead of performing them. The log is written to `%APPDATA%\HandheldCord\handheldcord.log`.
+`--dry-run` logs key presses and window switches instead of performing them. The log is written next to `config.json`.
+Platform code lives in `windows/` and `linux/`; `system.py` picks the backends, everything else is shared.
 
 ### Building and releasing
 
-`pip install -e .[build]` and `python packaging/build.py` create `dist/HandheldCord-<version>-win64.zip` (PyInstaller, one folder, no Python required).
-Releases are built by GitHub Actions: bump `__version__` in `src/handheldcord/__init__.py`, then push a matching tag such as `v0.1.0`.
+`pip install -e .[build]` and `python packaging/build.py` create `dist/HandheldCord-<version>-win64.zip` on Windows and `dist/HandheldCord-<version>-linux-x86_64.tar.gz` on Linux (PyInstaller, one folder, no Python required).
+Releases are built by GitHub Actions for both systems: bump `__version__` in `src/handheldcord/__init__.py`, then push a matching tag such as `v0.1.0`.
 
 ## Roadmap
 
