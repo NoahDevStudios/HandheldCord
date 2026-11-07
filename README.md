@@ -168,7 +168,8 @@ Contexts: `game`, `discord`, `discord_popup`, `osk`, `menu`, `wizard`. A context
 
 - **Desktop sessions only.** The Steam Deck's Game Mode doesn't allow overlays or window switching for other apps.
 - On a Steam Deck, Steam's desktop layout must send **gamepad** input (the template *Gamepad with Mouse Trackpad*), otherwise HandheldCord can't see the controller. The setup assistant shows where.
-- On Wayland desktops HandheldCord runs through XWayland like Discord itself. The overlay key (F10) works while an X11 window has the focus – Discord and games running through Proton are X11 windows; holding **View + Menu** always works.
+- **Discord has to run in X11 mode.** Since Electron 38, Electron apps start as native Wayland apps on Wayland desktops, and HandheldCord can't see or control those. HandheldCord starts Discord in X11 mode itself; if Discord already runs as a Wayland app, **A** on the setup assistant's Discord step restarts it in X11 mode – later starts from the app menu or Discord's autostart keep it.
+- On Wayland desktops HandheldCord runs through XWayland as well. The overlay key (F10) works while an X11 window has the focus – Discord and games running through Proton are X11 windows; holding **View + Menu** always works.
 - If Discord's mute or push-to-talk key doesn't react while a native Wayland app is in front, allow it in KDE's System Settings under **Legacy X11 App Support**.
 
 ## Support

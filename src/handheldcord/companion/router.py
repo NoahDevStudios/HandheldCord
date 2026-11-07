@@ -37,8 +37,11 @@ class Discord(Protocol):
     def foreground(self) -> int: ...
     def is_discord(self, hwnd: int) -> bool: ...
     def find(self) -> int: ...
+    def status(self) -> str: ...
     def show(self) -> str: ...
     def toggle(self) -> str: ...
+    # Linux only, when status() is "wayland": restart Discord in X11 mode.
+    # def restart_in_x11(self) -> str: ...
 
 
 class Ui(Protocol):
@@ -290,6 +293,8 @@ class Router:
             self.ui.toast(self.t("toast.not_found"))
         elif result == "failed":
             self.ui.toast(self.t("toast.focus_failed"))
+        elif result == "wayland":
+            self.ui.toast(self.t("toast.discord_wayland"))
 
     def _open_support(self) -> None:
         """The support Discord's invite opens in the browser, which offers to continue in the app."""
@@ -487,7 +492,11 @@ class Router:
         if action == "close":
             self._wizard_close()
         elif action == "discord.show":
-            self._after_show(self.discord.show())
+            if self.discord.status() == "wayland":
+                # The step explains it: Discord runs as a Wayland app, Ⓐ restarts it in X11 mode.
+                self._after_show(self.discord.restart_in_x11())
+            else:
+                self._after_show(self.discord.show())
             self._wizard_publish()
         elif action == "discord.settings":
             self._open_settings()
@@ -542,6 +551,6 @@ class Router:
             self.on_keys_changed()
 
     def _wizard_publish(self) -> None:
-        status = self.t("wizard.status.found" if self.discord.find() else "wizard.status.missing")
+        status = self.t(f"wizard.status.{self.discord.status()}")
         options = {"autostart": self.cfg.autostart}
         self.ui.wizard_changed(self.wizard.snapshot(self.t, self._wizard_keys(), options, status=status))

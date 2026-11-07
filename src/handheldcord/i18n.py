@@ -51,6 +51,7 @@ STRINGS: dict[str, dict[str, str]] = {
         "toast.config_reloaded": "Configuration reloaded",
         "toast.config_error": "Configuration has errors – using defaults",
         "toast.support": "Opening the support Discord …",
+        "toast.discord_wayland": "Discord runs as a Wayland app – switch it in the setup (Ⓐ on the Discord step)",
         "app.credit": "HandheldCord {version} · by {author}",
         "osk.space": "Space",
         "osk.insert": "Insert",
@@ -89,6 +90,11 @@ STRINGS: dict[str, dict[str, str]] = {
         "wizard.move": "Move",
         "wizard.status.found": "✔ Discord found",
         "wizard.status.missing": "✖ Discord not found",
+        "wizard.status.starting": "… Discord is starting",
+        "wizard.status.wayland": (
+            "✖ Discord runs as a Wayland app, which HandheldCord can't see. Ⓐ restarts it in X11 mode – "
+            "later starts use it too."
+        ),
         "wizard.welcome.title": "Welcome to HandheldCord",
         "wizard.welcome.body": (
             "HandheldCord controls your official Discord app with your controller. It never touches your "
@@ -237,6 +243,7 @@ STRINGS: dict[str, dict[str, str]] = {
         "toast.config_reloaded": "Konfiguration neu geladen",
         "toast.config_error": "Konfiguration fehlerhaft – Standardwerte aktiv",
         "toast.support": "Support-Discord wird geöffnet …",
+        "toast.discord_wayland": "Discord läuft als Wayland-App – in der Einrichtung umstellen (Ⓐ beim Schritt Discord)",
         "app.credit": "HandheldCord {version} · von {author}",
         "osk.space": "Leerzeichen",
         "osk.insert": "Einfügen",
@@ -275,6 +282,11 @@ STRINGS: dict[str, dict[str, str]] = {
         "wizard.move": "Verschieben",
         "wizard.status.found": "✔ Discord gefunden",
         "wizard.status.missing": "✖ Discord nicht gefunden",
+        "wizard.status.starting": "… Discord startet",
+        "wizard.status.wayland": (
+            "✖ Discord läuft als Wayland-App, die HandheldCord nicht sieht. Ⓐ startet es im X11-Modus neu – "
+            "auch spätere Starts nutzen ihn."
+        ),
         "wizard.welcome.title": "Willkommen bei HandheldCord",
         "wizard.welcome.body": (
             "HandheldCord steuert deinen offiziellen Discord-Client mit dem Controller. Es greift nicht auf "

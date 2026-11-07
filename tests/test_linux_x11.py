@@ -79,6 +79,23 @@ def test_discord_window_is_found_focused_and_left(discord_window):
     assert wait_until(lambda: discord.x.is_minimized(window.id))
 
 
+def test_windows_are_found_without_an_ewmh_client_list(discord_window):
+    from handheldcord.linux.x11 import X11
+
+    _, window = discord_window
+    x = X11()
+    assert wait_until(lambda: window.id in x._top_level_windows())  # Openbox reparents: a grandchild of root
+
+
+def test_discord_without_an_x11_window_counts_as_wayland(monkeypatch):
+    from handheldcord.linux import discord as linux_discord
+
+    monkeypatch.setattr(linux_discord, "discord_pids", lambda: [1])
+    discord = linux_discord.DiscordWindows()
+    assert discord.status() == "wayland"
+    assert discord.show() == "wayland"
+
+
 def test_keys_and_text_reach_discord(discord_window):
     from handheldcord.linux.sender import KeySender
 

@@ -28,7 +28,18 @@ class FakeDiscord:
     def __init__(self):
         self.in_front = False
         self.running = True
+        self.wayland = False  # Linux: Discord runs, but as a Wayland app HandheldCord can't see
         self.calls: list[str] = []
+
+    def status(self):
+        if self.wayland:
+            return "wayland"
+        return "found" if self.running else "missing"
+
+    def restart_in_x11(self):
+        self.calls.append("restart_in_x11")
+        self.wayland = False
+        return "launching"
 
     def foreground(self):
         return 1 if self.in_front else 2

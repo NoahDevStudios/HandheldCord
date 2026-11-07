@@ -266,6 +266,16 @@ def test_closing_the_assistant_marks_setup_done(harness):
     assert json.loads(harness.cfg.path.read_text("utf-8"))["setup_done"] is True
 
 
+def test_assistant_restarts_a_wayland_discord_in_x11_mode(harness):
+    harness.discord.wayland = True
+    go_to_step(harness, "discord")
+    assert "runs as a Wayland app" in harness.ui.wizard["body"]
+    harness.tap("A")
+    assert harness.discord.calls[0] == "restart_in_x11"
+    assert harness.ui.toasts[-1] == "Starting Discord …"
+    assert harness.discord.calls[-1] == "show"  # the restarted window comes to the front
+
+
 def test_overlay_hotkey_toggles_discord(harness):
     harness.router.on_hotkey("overlay")
     assert harness.discord.calls == ["toggle", "show"]

@@ -20,9 +20,9 @@ if sys.platform == "win32":
         except OSError:  # no program associated with .json
             subprocess.Popen(["notepad.exe", str(path)])
 else:
-    # An X11 client, through XWayland on Wayland desktops, just like the Discord app itself:
-    # X11 lets overlays stay on top, send keys to Discord and register the overlay key.
-    os.environ.setdefault("QT_QPA_PLATFORM", "xcb")
+    # An X11 client, through XWayland on Wayland desktops: X11 lets overlays stay on top, send keys
+    # to Discord and register the overlay key. Forced, because some setups ask Qt for Wayland globally.
+    os.environ["QT_QPA_PLATFORM"] = "xcb"
     from .linux import autostart
     from .linux.discord import DiscordWindows
     from .linux.gamepad import EvdevBackend as GamepadBackend

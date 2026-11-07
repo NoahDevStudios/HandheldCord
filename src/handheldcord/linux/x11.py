@@ -46,13 +46,44 @@ class X11:
 
     # --- windows ----------------------------------------------------------------
 
+    def window_manager(self) -> str:
+        """The EWMH window manager's name, or "" if there is none."""
+        check = self._property(self.root.id, "_NET_SUPPORTING_WM_CHECK")
+        if check is None or not len(check):
+            return ""
+        name = self._property(int(check[0]), "_NET_WM_NAME", self.atom("UTF8_STRING"))
+        return name.decode("utf-8", "replace") if isinstance(name, bytes) else str(name or "unnamed")
+
     def active_window(self) -> int:
         value = self._property(self.root.id, "_NET_ACTIVE_WINDOW")
-        return int(value[0]) if value is not None and len(value) else 0
+        if value is not None:
+            return int(value[0]) if len(value) else 0  # 0: a Wayland window has the focus
+        try:  # no EWMH: ask the X server
+            focus = self.display.get_input_focus().focus
+        except error.XError:
+            return 0
+        return getattr(focus, "id", 0)
 
     def client_windows(self) -> list[int]:
         value = self._property(self.root.id, "_NET_CLIENT_LIST")
-        return [int(wid) for wid in value] if value is not None else []
+        if value is not None and len(value):
+            return [int(wid) for wid in value]
+        return self._top_level_windows()
+
+    def _top_level_windows(self) -> list[int]:
+        """Without an EWMH client list: the root's children, and theirs for reparenting window managers."""
+        try:
+            children = self.root.query_tree().children
+        except error.XError:
+            return []
+        found = []
+        for child in children:
+            found.append(child.id)
+            try:
+                found += [grandchild.id for grandchild in child.query_tree().children]
+            except error.XError:
+                continue
+        return found
 
     def wm_class(self, wid: int) -> str:
         """The class half of WM_CLASS in lower case, such as "discord"."""
